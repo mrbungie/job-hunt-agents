@@ -710,6 +710,13 @@ Strictly truthful, reordered to foreground what THIS ad wants. Length follows
 **ATS compliance is mandatory** — the resume must parse cleanly in applicant
 tracking systems:
 
+**Length is the user's setting, not a design preference.** Read
+`documents.resume_length` before drafting or compacting. `one_page` means one
+page; `generous` permits up to three pages of relevant, factual material. Never
+delete experience, force a tiny type size, or declare a one-page CV preferable
+when the configured setting is generous. Only the cover letter is exactly one
+page.
+
 - **Single column, linear top-to-bottom flow.** No tables, no multi-column
   layouts, no text boxes, no sidebars — parsers read left-to-right, top-to-
   bottom and scramble columns.
