@@ -1,6 +1,6 @@
 ---
 name: cover-letter
-description: Draft a tailored cover letter and a matching ATS-compliant resume for a specific job ad, after scoring the fit and estimating what the role pays for this candidate. Input is the job-ad URL; with no URL, it picks the highest-scoring `todo` ad from the pipeline ledger that job-scan maintains. The user's own profile documents are the source of truth — nothing is invented. Outputs markdown + PDF into a per-application folder, and can optionally fill a LinkedIn Easy Apply form in the user's own Chrome (the user always validates the send). Runs a guided first-time setup if the workspace is not configured yet. Use when the user says "draft a cover letter for <URL>", "apply to this job <URL>", "tailor my resume for <URL>", or invokes it with no argument to take the next pending ad.
+description: Draft a tailored cover letter and matching ATS-compliant resume as native HTML and PDF for a specific job ad. The user's own profile documents are the source of truth — nothing is invented.
 user-invocable: true
 allowed-tools: Bash(*), Read, WebFetch, Write, Edit, AskUserQuestion, ToolSearch
 ---
@@ -701,7 +701,7 @@ read `shared/modules/<name>.md` now and capture what it asks for **while the ad
 is still open** — that is the whole point of doing it here rather than weeks
 later.
 
-## 5 — Draft the resume (`resume.md`) — tailored, ATS-compliant
+## 5 — Draft the resume (`resume.html`) — tailored, ATS-compliant
 
 Strictly truthful, reordered to foreground what THIS ad wants. Length follows
 `documents.resume_length` in `config.yml`. `render.sh` styles it via
@@ -734,46 +734,23 @@ tracking systems:
 - Keep job titles, employers and dates on their own clearly-labelled lines so
   the parser can map role → employer → dates.
 
-Structure — name, title and contact go in a **YAML metadata block** (the
-template renders the header from them), then the body:
+Write a complete semantic HTML document. Name, title and contact are visible
+HTML elements in the body, never YAML metadata or a page header/footer. Use the
+configured `profile/template/resume-template.html` and `document.css` as the
+visual starting point; adapt it for this document without changing its factual
+content.
 
-```markdown
----
-name: "<Full name>"
-jobtitle: "<Target title> · <secondary> · <tertiary>"
-contact: "<email>  ·  <phone>  ·  <city, country>  ·  <linkedin>  ·  <github>"
----
-
-## Summary
-
-<2–3 lines rewritten to mirror the ad's role and top requirements, using only
-real strengths. Weave in the ad's key keywords where truthful.>
-
-## Skills
-
-- **<Group>:** <skills the ad asks for that the user genuinely has, first>
-
-## Experience
-
-### <Role> — <Company>
-*<City> · MM/YYYY – MM/YYYY*
-
-- <achievement-oriented bullet, chosen for relevance to the ad>
-
-### <next role...>
-```
+Use `<header>`, `<h1>`, contact `<p>`, `<section>`, `<h2>`, `<article>`,
+`<h3>`, `<p>` and `<ul><li>` only. No tables, columns, text boxes, icons,
+graphics or absolute positioning.
 
 Draw on **both** the exports and `repos.md` — omitting what only `repos.md`
 records silently under-sells the user. Mirror its **depth wording**: label
 prototype-level work as such rather than implying production depth, and give a
 `repos.md` project its own `## Projects` entry when the ad makes it relevant.
 
-**Formatting rules the template depends on:**
-
-- The city/date line is a single `*italic*` line.
-- **Always leave a blank line between the `*meta*` line and the bullet list**,
-  and after each `## heading`. Without it, pandoc folds the bullets into the
-  meta paragraph and they render as literal `-` characters.
+**Formatting rules:** city/date is a single semantic `<p class="meta">`; keep
+job titles, employers and dates on separate visible lines.
 - Order roles by recency; give the most relevant one or two bullets each. Fold
   the oldest roles into a single italic "Earlier experience (YYYY–YYYY) — …".
 - **Never alter titles, employers or dates.**
@@ -784,47 +761,14 @@ End with `## Certifications` (real ones, ad-relevant first), `## Education` and
 
 Apply anything `candidate.md` records under *standing resume content*.
 
-## 6 — Draft the cover letter (`cover-letter.md`)
+## 6 — Draft the cover letter (`cover-letter.html`)
 
-Tailored prose in `LANG`, ~250–400 words, honest and specific. Same YAML header
-as the resume (rendered by `letter-template.tex`).
+Tailored prose in `LANG`, ~250–400 words, honest and specific. Write complete
+semantic HTML using the letter template; never YAML, Markdown, LaTeX commands
+or an intermediate source format.
 
-```markdown
----
-name: "<Full name>"
-jobtitle: "<Target title> · <secondary> · <tertiary>"
-contact: "<email>  ·  <phone>  ·  <city, country>  ·  <linkedin>"
----
-
-\hfill <City>, <today's date in LANG's convention>
-
-**<Company>**\
-<Recipient, or the HR department if unknown>\
-<Company city>
-
-**<Subject line: application for <Role>>**
-
-<Salutation appropriate to LANG.>
-
-<Opening: state the role and a genuine hook — what draws the user to this
-company and this role.>
-
-<Body 1: map two or three of their REAL, most relevant experiences directly to
-the ad's key requirements. Be concrete — only what is true.>
-
-<Body 2: why this company specifically, and the value they bring.>
-
-<Closing: availability, interview interest, courteous sign-off.>
-
-\vspace{45pt}
-
-\hfill <Full name>\hspace{1.5cm}
-```
-
-**Formatting notes:** `\hfill` before the date and the signature right-aligns
-them; the trailing `\hspace{1.5cm}` keeps the name off the right margin; the
-`\vspace{45pt}` leaves room to sign by hand. End recipient-block lines with a
-trailing `\` to force line breaks.
+Use normal HTML paragraphs for date, recipient, subject, salutation, body and
+signature. Use CSS for alignment and spacing.
 
 **Signature.** If `$JOB_HUNT_HOME/signature.png` exists, replace the `\vspace`
 placeholder with the `\includegraphics` block documented in `candidate.md`,
@@ -848,10 +792,10 @@ only, with no endpoints, internal names or ticket references.
 ## 7 — Render to PDF
 
 ```bash
-./render.sh <folder>/resume.md       <folder>/<Family>_<Given>_<Company>.pdf
-./render.sh <folder>/cover-letter.md <folder>/<Family>_<Given>_<Company>_CoverLetter.pdf letter
+./render.sh <folder>/resume.html       <folder>/<Family>_<Given>_<Company>.pdf
+./render.sh <folder>/cover-letter.html <folder>/<Family>_<Given>_<Company>_CoverLetter.pdf letter
 # Optional, only when explicitly requested:
-./render.sh --engine latex <folder>/resume.md <folder>/<Family>_<Given>_<Company>.pdf
+./render.sh --engine latex <folder>/resume.html <folder>/<Family>_<Given>_<Company>.pdf
 ```
 
 `render.sh` defaults to **HTML → PDF**: Pandoc produces a local HTML preview
