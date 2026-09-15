@@ -46,6 +46,7 @@ Thumbs.db
 .vscode/
 __pycache__/
 *.pyc
+.worktrees/
 
 # Règles locales, non partagées avec le plugin
 CLAUDE.md
