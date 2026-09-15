@@ -195,14 +195,11 @@ sudo pacman -S --needed imagemagick python-pillow   # optional
    your job board (`linkedin.com`).
 4. **Log in to the job board in that Chrome**, as yourself. Keep it logged in.
 
-### 3. The plugin
+### 3. The client
 
-In Claude Code:
-
-```
-/plugin marketplace add dominiquevienne/claude-job-hunt
-/plugin install claude-job-hunt@claude-job-hunt
-```
+Install the local clone with the matching command in [Manual installation from
+a local clone](#manual-installation-from-a-local-clone). Do not use a
+marketplace command.
 
 ### 4. Fonts
 
@@ -272,14 +269,11 @@ if you see "xelatex not found" straight after installing, this is why.
    `linkedin.com`.
 4. **Log in to LinkedIn in that Chrome**, as yourself.
 
-### 5. The plugin
+### 5. The client
 
-In Claude Code:
-
-```
-/plugin marketplace add dominiquevienne/claude-job-hunt
-/plugin install claude-job-hunt@claude-job-hunt
-```
+Install the local clone with the matching command in [Manual installation from
+a local clone](#manual-installation-from-a-local-clone). Do not use a
+marketplace command.
 
 Then go to [Check that it works](#check-that-it-works).
 
@@ -370,12 +364,9 @@ py -m pip install --user Pillow
 **[mcp-chrome](https://github.com/hangwin/mcp-chrome)** in the chosen profile,
 grant it permission for `linkedin.com`, and log in.
 
-**6. The plugin**, in Claude Code:
-
-```
-/plugin marketplace add dominiquevienne/claude-job-hunt
-/plugin install claude-job-hunt@claude-job-hunt
-```
+**6. The client.** Install the local clone with the matching command in
+[Manual installation from a local clone](#manual-installation-from-a-local-clone).
+Do not use a marketplace command.
 
 **Known rough edges on native Windows.** Paths with spaces (`C:\Users\Ada
 Lovelace\`) occasionally trip shell quoting; if a script fails oddly, that is
@@ -387,41 +378,16 @@ profile — that is fine.
 
 ## Updating
 
-**The plugin tells you when a release is out.** At the start of any skill it
-compares the installed version against the latest **published release** and
-prints one short block if you are behind — the version, and the two commands
-below. When you are current it prints **nothing at all**, not even a
-reassurance, and every failure to check (no network, a rate limit) is equally
-silent. It never updates anything itself: that is the host's action, and the
-answer is cached for a day so nothing is fetched on every run.
+Update the clone, then re-run the same client block from [Manual installation
+from a local clone](#manual-installation-from-a-local-clone):
 
-**Two commands, in this order.** The first is the one that is easy to miss:
-
-```
-/plugin marketplace update claude-job-hunt
-/plugin update claude-job-hunt
+```sh
+git -C "$REPO" pull --ff-only
 ```
 
-There are two separate caches. The **marketplace clone** is what Claude Code
-reads to learn which versions exist; the **plugin cache** is what is actually
-installed. `/plugin update` compares the installed version against the
-marketplace clone — so while that clone is stale, it reports the version you
-already have, finds nothing newer, and does nothing. Correctly, and silently:
-it looks exactly like a broken plugin.
-
-**Newly installed skills appear after restarting Claude Code** — the skill list
-is read at session start.
-
-The same two steps from a shell:
-
-```bash
-claude plugin marketplace update claude-job-hunt
-claude plugin update claude-job-hunt
-```
-
-`update`, not `install`: on an already-installed plugin `install` answers
-"already installed" and leaves the version pointer where it was, even once the
-new version has been fetched.
+Restart the client after copying skills: hosts generally discover them at
+session start. This project has no published marketplace release or automatic
+updater.
 
 ## If something looks wrong
 
@@ -752,59 +718,78 @@ Adding a module for your country is the most useful contribution you can make.
 
 ---
 
-## Install from a local clone
+## Manual installation from a local clone
 
-Clone this repository once, then use the native installer for your harness. Do
-not use the retired experimental copier: it is not a host-plugin installer.
+This project is **not published in a marketplace**. Each supported client
+installs directly from this clone using its native skills/plugin location; do
+not call a marketplace command. The commands below are mechanical: they do not
+require guessing a source path or merging configuration by hand.
 
 ```sh
 git clone https://github.com/mrbungie/job-hunt-agents.git
 cd job-hunt-agents
+REPO="$PWD"
 ```
+
+### Required once: mcp-chrome
+
+All browser work uses [mcp-chrome](https://github.com/hangwin/mcp-chrome) at
+`http://127.0.0.1:12306/mcp`.
+
+```sh
+node --version                    # Node.js 20+ required
+npm install -g mcp-chrome-bridge
+mcp-chrome-bridge register
+```
+
+The bridge installation is automatic. Loading the downloaded mcp-chrome
+extension in `chrome://extensions/` and clicking its **Connect** button is the
+one deliberate human handoff. Before browser work, the plugin asks **“Which
+Chrome profile should I use?”** It must not select a profile, sign in, solve
+CAPTCHA, approve permissions or 2FA, upload a file, or submit an application.
 
 ### Claude Code
 
 ```sh
-claude plugin marketplace add .
-claude plugin install claude-job-hunt@claude-job-hunt --scope user
+mkdir -p "$HOME/.claude/skills"
+cp -R "$REPO/skills/." "$HOME/.claude/skills/"
+claude mcp add --scope user --transport http mcp-chrome http://127.0.0.1:12306/mcp
 ```
 
 ### Codex
 
 ```sh
-codex plugin marketplace add .
-codex plugin add job-hunt-agents@job-hunt-agents
+CODEX_SKILLS="${CODEX_HOME:-$HOME/.codex}/skills"
+mkdir -p "$CODEX_SKILLS"
+cp -R "$REPO/skills/." "$CODEX_SKILLS/"
 codex mcp add mcp-chrome --url http://127.0.0.1:12306/mcp
 ```
 
 ### Antigravity CLI (Agy)
 
 ```sh
-agy plugin install ./adapters/antigravity/plugin
+agy plugin install "$REPO/adapters/antigravity/plugin"
+agy mcp add mcp-chrome http://127.0.0.1:12306/mcp
 ```
 
-The plugin carries its own `mcp_config.json` for mcp-chrome. Confirm it with
-`/mcp` before browser work.
+The plugin also carries `mcp_config.json`; the explicit `agy mcp add` makes the
+endpoint available even when a host does not import plugin MCP settings.
 
 ### OpenCode
 
-Copy the project adapter into the project where you run OpenCode, then merge its
-MCP entry into that project's `opencode.json`:
+`PROJECT` is the existing project where OpenCode will run:
 
 ```sh
-mkdir -p /path/to/project/.opencode
-cp -R adapters/opencode/skills /path/to/project/.opencode/
-cp adapters/opencode/opencode.json /path/to/project/opencode.job-hunt.json
-(cd /path/to/project && opencode mcp add mcp-chrome --url http://127.0.0.1:12306/mcp)
+PROJECT=/absolute/path/to/project
+mkdir -p "$PROJECT/.opencode"
+cp -R "$REPO/adapters/opencode/skills" "$PROJECT/.opencode/"
+(cd "$PROJECT" && opencode mcp add mcp-chrome --url http://127.0.0.1:12306/mcp)
 ```
 
-Merge the `mcp-chrome` object from `opencode.job-hunt.json` into the project's
-existing `opencode.json`; do not overwrite unrelated MCP servers or settings.
-OpenCode discovers skills under `.opencode/skills/`.
-
-For every host, install and connect mcp-chrome in the Chrome profile you choose
-before browser work. The workflow asks for that profile and stops for CAPTCHA,
-authentication, permissions and final submission.
+If that OpenCode version lacks `mcp add --url`, use the tracked
+[`adapters/opencode/opencode.json`](adapters/opencode/opencode.json) as a
+configuration fragment, adding only its `mcp-chrome` entry. OpenCode discovers
+skills under `.opencode/skills/`.
 
 ---
 
@@ -812,7 +797,7 @@ authentication, permissions and final submission.
 
 | Symptom | Cause | Fix |
 | :-- | :-- | :-- |
-| `/plugin update` does nothing and the version never changes | The marketplace clone is stale, so there is no newer version to see | Run `/plugin marketplace update claude-job-hunt` **first**, then `/plugin update` |
+| A copied skill does not reflect the clone | The client has an older copy | Run `git -C "$REPO" pull --ff-only`, repeat its installation block, then restart the client |
 | A new skill is installed but not offered | The skill list is read at session start | Restart Claude Code |
 | `ERROR: pandoc not found` / `xelatex not found` | Not installed, or not on the `PATH` of the shell Claude Code uses | Reinstall per your platform above, then open a **new** terminal. On macOS see [Make `xelatex` findable](#3-make-xelatex-findable) |
 | `xelatex` aborts on a font error | Noto Sans missing | Install the family, then `fc-cache -f` on Linux |

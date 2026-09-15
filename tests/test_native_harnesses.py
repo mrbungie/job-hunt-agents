@@ -46,6 +46,8 @@ class NativeHarnessPackages(unittest.TestCase):
 
     def test_readme_uses_native_local_install_commands(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        for command in ("claude plugin marketplace add", "codex plugin marketplace add", "agy plugin install", "opencode.json"):
+        for command in ("cp -R \"$REPO/skills/.\"", "agy plugin install", "opencode mcp add", "mcp-chrome-bridge register"):
             self.assertIn(command, readme)
+        self.assertIn("Which\nChrome profile should I use?", readme)
+        self.assertNotIn("plugin marketplace add", readme)
         self.assertNotIn("bin/install-host.py", readme)
