@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Render a document to a selectable-text PDF.
-# Usage: render.sh [--engine html|latex] <input.md> <output.pdf> [letter]
+# Usage: render.sh [--engine html|latex] <input.html> <output.pdf> [letter]
 set -euo pipefail
 
 ENGINE="${JOB_HUNT_PDF_ENGINE:-html}"
@@ -50,9 +50,18 @@ find_browser() {
 }
 
 render_html() {
-  command -v pandoc >/dev/null 2>&1 || { plain_fallback "pandoc is missing; install it for the HTML engine"; return; }
   local browser template html css ws
   browser="$(find_browser)" || { plain_fallback "Chrome or Chromium is missing; install it for the HTML engine"; return; }
+  if [[ "$IN" = *.html || "$IN" = *.htm ]]; then
+    html="$IN"
+    echo "engine: html (native source)" >&2
+    "$browser" --headless=new --disable-gpu --allow-file-access-from-files --no-pdf-header-footer "--print-to-pdf=$OUT" "file://$html"
+    [ -s "$OUT" ] || { echo "ERROR: Chrome did not write $OUT" >&2; exit 3; }
+    echo "Wrote $OUT (HTML source: $html)" >&2
+    open_pdf "$OUT"
+    return
+  fi
+  command -v pandoc >/dev/null 2>&1 || { plain_fallback "pandoc is missing; install it for legacy Markdown input"; return; }
   ws="${JOB_HUNT_HOME:-}"
   if [ -z "$ws" ] && [ -x "$DIR/../../bin/workspace-path.py" ]; then
     ws="$(python3 "$DIR/../../bin/workspace-path.py" 2>/dev/null | tail -n 1 || true)"

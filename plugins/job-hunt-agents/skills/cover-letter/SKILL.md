@@ -8,8 +8,17 @@ allowed-tools: Bash(*), Read, WebFetch, Write, Edit, AskUserQuestion, ToolSearch
 # Tailored cover letter + resume
 
 Given a **job-ad URL**, produce a tailored **cover letter** and a concise
-**resume**, both in the **language of the job ad**, as markdown **and** PDF,
+**resume**, both in the **language of the job ad**, as native **HTML** and PDF,
 saved into a per-application folder.
+
+## Non-negotiable document format
+
+Write `resume.html` and `cover-letter.html` directly. **Do not write Markdown
+as an intermediate CV format.** Each file is complete editable HTML with its
+own factual content, semantic headings, single-column body flow and the chosen
+CSS template linked from `profile/template/` when configured. Chrome prints that
+HTML directly to PDF. LaTeX is optional and may be generated from the final
+HTML only when explicitly requested.
 
 **The user's real history is the source of truth — never fabricate.** Do not
 invent employers, job titles, dates, skills, tools or certifications that are
