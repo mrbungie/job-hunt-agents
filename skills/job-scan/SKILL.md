@@ -2,7 +2,7 @@
 name: job-scan
 description: Look for jobs that fit this person and keep the shortlist up to date. Sweeps the job boards they have switched on, scores every ad against what their own documents actually say, and records what it found so the same ad is never proposed twice. Use when the user says "find me some jobs", "trouve-moi des offres", "look for roles that fit me", "cherche des postes pour moi", "scan the boards", "refresh my job list", "quoi de neuf cette semaine ?", "any new openings?", "scan LinkedIn", "scan jobup", names any single job site, or before writing a cover letter. Around seventy boards are supported across some forty countries — public employment services, employers' own career sites, national and sector boards; the list is in this skill's own § Which boards, and none is ever scanned until the user switches it on.
 user-invocable: true
-allowed-tools: Bash(*), Read, Write, Edit, AskUserQuestion, ToolSearch, mcp__claude-in-chrome__*
+allowed-tools: Bash(*), Read, Write, Edit, AskUserQuestion, ToolSearch
 ---
 
 # Job scan → pipeline ledger
@@ -269,9 +269,9 @@ in its broken-adapter mode — and say plainly in the report that the re-check d
 not happen, rather than letting a silent failure read as another empty quarter.
 
 Then the adapter's **prerequisites block**, which is not optional: the user must
-be told that this drives their own Chrome, that it needs the Claude Chrome
-extension installed and connected, and that they must be logged in to the board
-themselves first. If the extension is absent, follow `shared/prerequisites.md`
+be told that this drives their own Chrome through mcp-chrome, that they must
+select the profile, and that they must be logged in to the board themselves
+first. If mcp-chrome is absent, follow `shared/prerequisites.md`
 — help them install it, and offer the no-browser route meanwhile.
 
 **Read that block rather than assuming it.** Most adapters do not drive the

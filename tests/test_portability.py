@@ -95,3 +95,17 @@ class BrowserHandoff(unittest.TestCase):
         handoff = " ".join(handoff.split()).casefold()
         for required in ("mcp-chrome", "which chrome profile", "captcha", "two-factor", "human", "do not submit"):
             self.assertIn(required, handoff)
+
+    def test_active_browser_skills_do_not_depend_on_claude_chrome_tools(self):
+        for relative in (
+            "skills/job-scan/SKILL.md",
+            "skills/cover-letter/SKILL.md",
+            "skills/board-request/SKILL.md",
+            "skills/linkedin-profile/SKILL.md",
+            "skills/linkedin-watch/SKILL.md",
+            "shared/boards/linkedin.md",
+            "shared/prerequisites.md",
+        ):
+            text = (ROOT / relative).read_text(encoding="utf-8").casefold()
+            self.assertNotIn("mcp__claude-in-chrome", text, relative)
+            self.assertIn("mcp-chrome", text, relative)

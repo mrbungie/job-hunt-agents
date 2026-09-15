@@ -2,7 +2,7 @@
 name: board-request
 description: Report a board problem upstream so the fix reaches every user, not just this machine. Three modes — a board with no adapter yet (records what an adapter would need), an adapter that has stopped working (records the symptom, what changed and the evidence), and a finding that is not a board failure at all (an adapter that answered with the wrong data, a trap in a site's behaviour, a defect in one of the scripts, a method that turned out wrong). Invoked automatically by cover-letter when an ad URL comes from an unknown board, by job-scan when a board's sweep fails, whenever a run learns something that would be true for another user of this plugin, or directly when the user says "add support for <board>", "this board isn't supported", "the LinkedIn scan is broken", "jobup stopped working", "submit jobs.ch as a board".
 user-invocable: true
-allowed-tools: Bash(*), Read, Write, Edit, WebFetch, AskUserQuestion, ToolSearch, mcp__claude-in-chrome__*
+allowed-tools: Bash(*), Read, Write, Edit, WebFetch, AskUserQuestion, ToolSearch
 ---
 
 # Reporting upstream
@@ -132,7 +132,7 @@ is not.
 Reported <YYYY-MM-DD> from claude-job-hunt <version>.
 ```
 
-If the Claude Chrome extension is connected and the user agrees, opening the
+If mcp-chrome is connected in the user-confirmed profile and the user agrees, opening the
 board's search page once and noting the result-card structure makes the report
 far more actionable. **Ask first, keep it to two or three page views, and never
 log in.** If the extension is absent, skip it — the report is still worth

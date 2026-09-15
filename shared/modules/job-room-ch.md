@@ -257,9 +257,9 @@ their behalf**.
 
 ### Prerequisites — say both out loud before starting
 
-1. **The Claude Chrome extension must be installed and connected.** This step
-   drives the user's own browser; without the extension there is no browser at
-   all. If it is missing, say so plainly and fall back to handing them the
+1. **mcp-chrome must be installed and connected in the user's selected
+   profile.** This step drives the user's own browser; without mcp-chrome there
+   is no browser at all. If it is missing, say so plainly and fall back to handing them the
    captured values to type in themselves — which is a perfectly good outcome.
 2. **The user must log in to job-room.ch first, themselves.** It is an
    authenticated space tied to their AVS number and their ORP file. The plugin

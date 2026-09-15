@@ -2,7 +2,7 @@
 name: cover-letter
 description: Draft a tailored cover letter and a matching ATS-compliant resume for a specific job ad, after scoring the fit and estimating what the role pays for this candidate. Input is the job-ad URL; with no URL, it picks the highest-scoring `todo` ad from the pipeline ledger that job-scan maintains. The user's own profile documents are the source of truth — nothing is invented. Outputs markdown + PDF into a per-application folder, and can optionally fill a LinkedIn Easy Apply form in the user's own Chrome (the user always validates the send). Runs a guided first-time setup if the workspace is not configured yet. Use when the user says "draft a cover letter for <URL>", "apply to this job <URL>", "tailor my resume for <URL>", or invokes it with no argument to take the next pending ad.
 user-invocable: true
-allowed-tools: Bash(*), Read, WebFetch, Write, Edit, AskUserQuestion, ToolSearch, mcp__claude-in-chrome__*
+allowed-tools: Bash(*), Read, WebFetch, Write, Edit, AskUserQuestion, ToolSearch
 ---
 
 # Tailored cover letter + resume
@@ -938,13 +938,12 @@ and say which files to attach.
 
 Read `shared/boards/linkedin.md` first. Its prerequisites are not optional:
 tell the user that this drives **their own Chrome**, that it requires the
-**Claude Chrome extension** installed and connected, and that they must be
+**mcp-chrome** connection in their selected profile, and that they must be
 **logged in to LinkedIn themselves** before you begin — you work inside their
 session and never sign in for them.
 
-Then `tabs_context_mcp{createIfEmpty:true}`, navigate to the job URL,
-`computer{wait:4}`, `screenshot`. If the page shows the logged-out layout, stop
-and ask them to log in.
+Then use the connected mcp-chrome tab tools to navigate to the job URL and read
+the page. If the page shows the logged-out layout, stop and ask them to log in.
 
 ### 8.2 — Open the modal and walk its steps
 

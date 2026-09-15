@@ -5,9 +5,10 @@ Markdown drafting must continue when no browser backend is connected.
 
 ## Backend: mcp-chrome
 
-For Codex, Antigravity and OpenCode, prefer
-[hangwin/mcp-chrome](https://github.com/hangwin/mcp-chrome) when the person
-wants browser-assisted work. It is a local Chrome-extension MCP server: it
+For every supported host, use
+[hangwin/mcp-chrome](https://github.com/hangwin/mcp-chrome) for browser-assisted
+work. The former Claude Chrome integration is deprecated and must not be used
+by active workflows. mcp-chrome is a local Chrome-extension MCP server: it
 uses the person's already-open Chrome profile, including that profile's own
 settings and login state. Do not replace it with a clean automated browser just
 to make a workflow appear to work.

@@ -44,7 +44,7 @@ rather than assuming Debian.
 | `pdftotext`, `pdfinfo` | `pdftotext -v` | Reading profile exports, page-count checks | macOS `brew install poppler` · Debian `sudo apt install -y poppler-utils` · Windows `winget install --id oschwartz10612.Poppler -e` |
 | `magick` + Pillow | `magick -version` | Signature image only | macOS `brew install imagemagick && python3 -m pip install --user Pillow` · Debian `sudo apt install -y imagemagick python3-pil` · Windows `winget install --id ImageMagick.ImageMagick -e` then `py -m pip install --user Pillow` |
 | Homebrew (macOS) | `brew --version` | Everything above, on macOS | `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"` — then follow its "Next steps", which set the `PATH` |
-| Claude Chrome extension | ask Claude to open a tab | All browser automation | Cannot be installed from a shell — see below |
+| `mcp-chrome` | confirm a tab in the user-selected profile | All browser automation | User installs and connects it — see below |
 
 ## Rules when installing for the user
 
@@ -62,19 +62,21 @@ rather than assuming Debian.
 - **Never disable a check to move on.** A resume rendered without Noto Sans is
   not a resume rendered.
 
-## The Chrome extension is different
+## mcp-chrome is different
 
-It cannot be installed from a shell, and it needs three things the user must do
+It must be installed and connected by the user, and it needs three things they must do
 themselves. Give them as a numbered list, not a sentence:
 
-1. Install the **Claude extension for Chrome** — <https://claude.com/chrome>.
-2. **Sign in to it** with the same account.
-3. **Grant it permission for the site** you are about to use (`linkedin.com`,
-   and any board or portal the run touches). The extension asks per site; a
-   scan cannot read one page without it.
+1. Install and connect **mcp-chrome** following
+   <https://github.com/hangwin/mcp-chrome>.
+2. Open the Chrome profile they want this job search to use and connect
+   mcp-chrome from that profile.
+3. Grant the site's permissions in that chosen profile (`linkedin.com`, and any
+   board or portal the run touches).
 
-Then ask the user to confirm, and re-test by opening a tab. Until they confirm,
-**do not retry the browser tools in a loop** — it fails identically every time.
+Then ask the user which profile to use, wait for confirmation, and inspect only
+the tab they confirm. Until they confirm, **do not retry browser tools in a
+loop** — it fails identically every time.
 
 If they cannot or will not install it, say what still works without a browser:
 `cover-letter` accepts an ad URL, and falls back to pasted ad text when the page

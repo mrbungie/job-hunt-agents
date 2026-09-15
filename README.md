@@ -130,7 +130,7 @@ it. This section is here for anyone who would rather do it in one pass.
 | :-- | :-- | :-- | :-- |
 | 1 | **Claude Code**, recent version | everything | — |
 | 2 | **A profile to work from** — a LinkedIn account you can export, or an existing CV | the factual record every document is checked against | The plugin cannot work; it will not invent a career |
-| 3 | **Google Chrome** + the **[Claude extension for Chrome](https://claude.com/chrome)**, connected, with site permission granted for your job board | scanning ads, filling application forms | Documents still work; nothing opens or fills automatically. You give an ad URL, or paste the text |
+| 3 | **Google Chrome** + **[mcp-chrome](https://github.com/hangwin/mcp-chrome)** connected in the profile you choose | scanning ads, filling application forms | Documents still work; nothing opens or fills automatically. You give an ad URL, or paste the text |
 | 3b | **Being logged in to the board yourself**, in that Chrome — LinkedIn requires it, jobup.ch does not | scanning LinkedIn, Easy Apply | The plugin works *inside* your session and never signs in for you |
 | 4 | **`pandoc`** | markdown → PDF | No PDFs. The markdown is still written and you can convert it yourself |
 | 5 | **A LaTeX engine with `xelatex`** (TeX Live, MacTeX or MiKTeX) | the PDF layout | Same as above — `render.sh` prints the install command and stops |
@@ -187,14 +187,12 @@ sudo pacman -S --needed imagemagick python-pillow   # optional
 ```
 </details>
 
-### 2. Chrome and the Claude extension
+### 2. Chrome and mcp-chrome
 
 1. Install Google Chrome if you do not have it.
-2. Install the **[Claude extension for Chrome](https://claude.com/chrome)** and
-   sign in to it.
-3. **Grant it permission for your job board's domain** (`linkedin.com`). The
-   extension asks per site; without that permission the scan cannot read a
-   single page.
+2. Install and connect **[mcp-chrome](https://github.com/hangwin/mcp-chrome)**.
+3. Open the Chrome profile you want to use and grant its site permission for
+   your job board (`linkedin.com`).
 4. **Log in to the job board in that Chrome**, as yourself. Keep it logged in.
 
 ### 3. The plugin
@@ -266,12 +264,12 @@ eval "$(/usr/libexec/path_helper)"
 `render.sh` also probes the usual locations itself, so this rarely bites — but
 if you see "xelatex not found" straight after installing, this is why.
 
-### 4. Chrome and the Claude extension
+### 4. Chrome and mcp-chrome
 
 1. Install Google Chrome.
-2. Install the **[Claude extension for Chrome](https://claude.com/chrome)** and
-   sign in to it.
-3. **Grant it permission for `linkedin.com`** — the extension asks per site.
+2. Install and connect **[mcp-chrome](https://github.com/hangwin/mcp-chrome)**.
+3. Open the Chrome profile you want to use and grant its site permission for
+   `linkedin.com`.
 4. **Log in to LinkedIn in that Chrome**, as yourself.
 
 ### 5. The plugin
@@ -309,14 +307,15 @@ Linux. From here on, run Claude Code from the Ubuntu shell, not PowerShell.
 **3. Install the system packages** — the same as
 [Install — Linux](#install--linux) step 1, run inside Ubuntu.
 
-**4. Chrome and the extension stay on Windows.** Install Chrome and the
-**[Claude extension](https://claude.com/chrome)** in Windows as usual, grant it
-permission for `linkedin.com`, and log in there.
+**4. Chrome and mcp-chrome stay on Windows.** Install Chrome and
+**[mcp-chrome](https://github.com/hangwin/mcp-chrome)** in Windows, connect the
+profile you intend to use, grant it permission for `linkedin.com`, and log in
+there.
 
 > **Caveat worth knowing before you count on it.** Claude Code runs inside WSL
 > while Chrome runs on Windows — two different environments. Whether the
-> extension connects across that boundary depends on your setup and on the
-> version of Claude Code. **Test it first** (see
+> local mcp-chrome endpoint connects across that boundary depends on your
+> setup. **Test it first** (see
 > [Check that it works](#check-that-it-works), step 4). If it does not connect,
 > everything except browser automation still works: you paste the ad text and
 > the plugin writes your documents. If browser automation matters to you, use
@@ -367,9 +366,9 @@ winget install --id Python.Python.3.12 -e
 py -m pip install --user Pillow
 ```
 
-**5. Chrome and the Claude extension** — install Chrome, install the
-**[Claude extension](https://claude.com/chrome)**, grant it permission for
-`linkedin.com`, and log in.
+**5. Chrome and mcp-chrome** — install Chrome, install and connect
+**[mcp-chrome](https://github.com/hangwin/mcp-chrome)** in the chosen profile,
+grant it permission for `linkedin.com`, and log in.
 
 **6. The plugin**, in Claude Code:
 
@@ -792,7 +791,7 @@ been exercised with that host's browser backend.
 | `ERROR: pandoc not found` / `xelatex not found` | Not installed, or not on the `PATH` of the shell Claude Code uses | Reinstall per your platform above, then open a **new** terminal. On macOS see [Make `xelatex` findable](#3-make-xelatex-findable) |
 | `xelatex` aborts on a font error | Noto Sans missing | Install the family, then `fc-cache -f` on Linux |
 | MiKTeX asks to install a package mid-render | Normal on first use | Allow it; it happens once |
-| "No connected browser" | Extension missing, signed out, or no permission for the site | Install/sign in to the Claude Chrome extension and grant permission for `linkedin.com` |
+| "No connected browser" | mcp-chrome is not connected in the selected profile, or the site lacks permission | Connect mcp-chrome in that profile and grant permission for `linkedin.com` |
 | The scan says LinkedIn is showing the signed-out page | You are not logged in **in that Chrome** | Log in yourself, then tell Claude to continue. It will not sign in for you |
 | The scan only ever sees ~7 ads per search | Expected — the results list is virtualized and the automated tab is hidden | Run more, narrower searches. See [`shared/boards/linkedin.md`](shared/boards/linkedin.md) |
 | `sync-sources.sh` reports "missing" for files you exported | They landed somewhere other than Downloads or the Desktop | Move them there, or set `JOB_HUNT_DOWNLOADS` / `JOB_HUNT_DESKTOP` |

@@ -2,7 +2,7 @@
 name: linkedin-watch
 description: Read the user's LinkedIn feed in their own Chrome and pull out the job leads nobody posts on a board — "my team is hiring", "we're looking for a…", a connection sharing an opening. Produces a separate report and never touches the ledger. Use when the user says "regarde mon fil LinkedIn", "check my LinkedIn feed", "des offres dans mon réseau ?", "any leads on LinkedIn", "veille LinkedIn", or asks what their network has been hiring for. Reads only; it applies to nothing and writes nowhere.
 user-invocable: true
-allowed-tools: Read, Bash(*), AskUserQuestion, ToolSearch, mcp__claude-in-chrome__*
+allowed-tools: Read, Bash(*), AskUserQuestion, ToolSearch
 ---
 
 # LinkedIn feed — leads, and what they are not

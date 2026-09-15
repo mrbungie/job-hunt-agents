@@ -63,7 +63,7 @@ broken adapter.
 
 ## Prerequisites — read the bot-detection section first
 
-1. **The Claude extension for Chrome**, installed and connected.
+1. **mcp-chrome**, installed and connected in the user-confirmed Chrome profile.
 2. **Indeed challenges automated-looking traffic.** See below. This is the
    defining constraint of this adapter, not a footnote.
 3. Whether browsing requires a login was **not verified** — the session used

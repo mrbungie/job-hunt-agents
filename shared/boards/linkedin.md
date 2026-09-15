@@ -69,13 +69,12 @@ Browser automation here is not a background capability: it needs two things
 from the user, and both fail silently-looking ways if they are missing. **Tell
 the user before you start, not after the first error.**
 
-1. **The Claude extension for Chrome must be installed and connected.** Without
-   it there is no browser at all — the `mcp__claude-in-chrome__*` tools are
-   simply absent or return no connected browser. If you cannot reach a tab,
-   say exactly that: *"this step drives your own Chrome and needs the Claude
-   Chrome extension installed and connected; without it I can still produce
-   your documents, but I cannot open or fill anything for you."* Then continue
-   with everything that does not need a browser rather than stopping the run.
+1. **mcp-chrome must be installed and connected in the profile the user chose.**
+   If no confirmed tab is available, say: *"this step uses your selected
+   Chrome profile through mcp-chrome; without that connection I can still
+   produce documents, but I cannot open or fill anything for you."* Then
+   continue with everything that does not need a browser rather than stopping
+   the run.
 2. **The user must already be logged in to the site, in that Chrome, before
    you begin.** This automation works *inside their session* — it does not and
    must not authenticate on their behalf, and it never handles their password.
@@ -90,16 +89,12 @@ login wall, and never fill a credential field.
 
 ## Setup
 
-Load the browser tools in ONE call:
-
-```
-ToolSearch "select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__navigate,mcp__claude-in-chrome__computer,mcp__claude-in-chrome__javascript_tool,mcp__claude-in-chrome__browser_batch,mcp__claude-in-chrome__read_page,mcp__claude-in-chrome__form_input,mcp__claude-in-chrome__file_upload,mcp__claude-in-chrome__tabs_create_mcp"
-```
-
-Then `tabs_context_mcp{createIfEmpty:true}` and work in that tab. **This runs in
-the user's own logged-in Chrome** — say so before starting, since it acts under
-their identity. If a page returns the logged-out layout, stop and ask them to
-log in rather than trying to authenticate.
+Use the connected mcp-chrome server's tab, content and interaction tools only
+after the user confirms the selected profile. **This runs in the user's own
+logged-in Chrome** — say so before starting, since it acts under their identity.
+If a page returns the logged-out layout, stop and ask them to log in rather than
+trying to authenticate. `shared/browser-handoff.md` supplies the complete
+profile and human-gate protocol.
 
 ## The constraint table
 

@@ -2,7 +2,7 @@
 name: linkedin-profile
 description: Survey the user's own LinkedIn profile in their own Chrome and report what is missing or out of date against the documents in `profile/`. Reads only — it fills nothing in and saves nothing. Use when the user says "améliore mon profil LinkedIn", "improve my LinkedIn", "mon profil LinkedIn est incomplet", "what's missing from my LinkedIn", "compare mon LinkedIn à mon CV", or asks what a recruiter would see on their profile. Milestone 1 of issue #184: the survey and the difference, so a person can see the gap before anything is written.
 user-invocable: true
-allowed-tools: Read, Bash(*), ToolSearch, mcp__claude-in-chrome__*
+allowed-tools: Read, Bash(*), ToolSearch
 ---
 
 # LinkedIn profile — survey and difference
