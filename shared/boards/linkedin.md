@@ -61,6 +61,10 @@ LinkedIn page needs reading, it is read in the user's browser or not at all.
 
 ## Prerequisites — say these out loud before touching the browser
 
+For a non-Claude host, read `shared/browser-handoff.md` first and use the
+user-confirmed mcp-chrome profile. Its CAPTCHA, authentication, permission and
+final-submit gates override every interaction instruction below.
+
 Browser automation here is not a background capability: it needs two things
 from the user, and both fail silently-looking ways if they are missing. **Tell
 the user before you start, not after the first error.**

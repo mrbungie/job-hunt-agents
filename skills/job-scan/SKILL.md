@@ -30,6 +30,7 @@ They live in this plugin, one level above this skill's folder
 | `shared/pipeline-format.md` | Steps 0 and 6 — the ledger's format and merge rules |
 | `shared/new-achievements.md` | Step 6b — the monthly question, and why it is never a repository scan |
 | `shared/workspace.md` | Steps 0 and 7 — the workspace files, and which one is authoritative about what |
+| `shared/browser-handoff.md` | Before any browser action — selecting mcp-chrome's profile and the mandatory human gates |
 | `shared/modules/*.md` | Step 6 — only those enabled in `config.yml` |
 
 **When a board with an adapter fails to sweep, invoke the `board-request` skill**

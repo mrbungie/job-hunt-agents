@@ -7,6 +7,10 @@ allowed-tools: Read, Bash(*), AskUserQuestion, ToolSearch, mcp__claude-in-chrome
 
 # LinkedIn feed — leads, and what they are not
 
+Before any browser action, read `shared/browser-handoff.md`. Select the user's
+confirmed mcp-chrome profile for this session and stop at every mandatory human
+gate; this skill is read-only and never applies to anything.
+
 **A post is not an advertisement.** *No structured employer, no location, no
 contract type, usually no URL.* **So this skill writes a report of its own and
 never the ledger** — mixing an inferred inventory into a measured one would make

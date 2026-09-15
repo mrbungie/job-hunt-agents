@@ -20,6 +20,11 @@ python3 .job-hunt-agents/codex/bin/preflight.py
 
 `browser`, `logged_in_session`, and `upload` deliberately remain `unknown`:
 an executable on `PATH` is not evidence of an authenticated browser session.
+For non-Claude hosts, [mcp-chrome](https://github.com/hangwin/mcp-chrome) is
+the recommended optional local backend. The workflow asks the person to choose
+their Chrome profile for each session and requires human takeover for CAPTCHA,
+authentication, permissions, errors and every final submission; see
+[`shared/browser-handoff.md`](../shared/browser-handoff.md).
 Markdown drafting, scoring, the ledger, and HTTP/text work remain independently
 available when browser or PDF support is absent.
 

@@ -7,6 +7,10 @@ allowed-tools: Read, Bash(*), ToolSearch, mcp__claude-in-chrome__*
 
 # LinkedIn profile — survey and difference
 
+Before any browser action, read `shared/browser-handoff.md`. Select the user's
+confirmed mcp-chrome profile for this session and stop at every mandatory human
+gate; this milestone remains read-only.
+
 **This milestone reads. It does not write, it does not submit, and it asks the
 user nothing.** *It produces one thing: the difference between what the profile
 says and what the user's own documents say.*

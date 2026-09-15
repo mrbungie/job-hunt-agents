@@ -87,3 +87,11 @@ class ProjectInstallation(unittest.TestCase):
             result = subprocess.run(command + ["--uninstall"], capture_output=True, text=True)
             self.assertEqual(result.returncode, 2)
             self.assertTrue(owned.exists())
+
+
+class BrowserHandoff(unittest.TestCase):
+    def test_mcp_chrome_handoff_requires_profile_choice_and_human_gates(self):
+        handoff = (ROOT / "shared" / "browser-handoff.md").read_text(encoding="utf-8")
+        handoff = " ".join(handoff.split()).casefold()
+        for required in ("mcp-chrome", "which chrome profile", "captcha", "two-factor", "human", "do not submit"):
+            self.assertIn(required, handoff)
