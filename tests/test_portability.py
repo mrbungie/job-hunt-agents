@@ -70,3 +70,15 @@ class CoverLetterRendering(unittest.TestCase):
         text = (ROOT / "skills/cover-letter/SKILL.md").read_text(encoding="utf-8").casefold()
         for phrase in ("html", "--engine latex", "mcp-chrome", "vision", "pdftotext", "screenshot"):
             self.assertIn(phrase, text)
+
+
+class CvTemplateSetup(unittest.TestCase):
+    def test_setup_requires_a_visual_pdf_template_and_change_skill_exists(self):
+        setup = (ROOT / "shared/setup.md").read_text(encoding="utf-8").casefold()
+        for phrase in ("visual template", "template-source.pdf", "html or latex", "vision"):
+            self.assertIn(phrase, setup)
+        skill = ROOT / "skills/cv-template/SKILL.md"
+        self.assertTrue(skill.is_file())
+        text = skill.read_text(encoding="utf-8").casefold()
+        self.assertIn("change", text)
+        self.assertIn("template-source.pdf", text)

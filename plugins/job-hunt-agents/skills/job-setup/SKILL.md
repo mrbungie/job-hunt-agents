@@ -61,7 +61,7 @@ it.
   current configuration first and ask which sections to revisit** rather than
   re-asking everything. Somebody who says *"reconfigure"* rarely means *all of
   it*.
-- **A section named** — `profile`, `contact`, `orientation`, `commute`,
+- **A section named** — `profile`, `template`, `contact`, `orientation`, `commute`,
   `languages`, `boards`, `searches`, `thresholds`, `modules`, `signature`,
   `repos` → jump to that step, change only it, leave the rest untouched.
 - **`boards`** also runs section **5d** when the geography reaches Austria: AMS
@@ -83,6 +83,7 @@ it.
 | *"add / remove a board"* | `boards` |
 | *"widen my search"* | `orientation`, not `searches`: widening is a decision before it is a value |
 | *"my CV changed"* | `profile` |
+| *"change my CV template"*, *"use this PDF style"* | `template` / `/cv-template` |
 | *"where are my files?"* | Answer from `workspace-path.py`, and offer to move them rather than creating a second workspace |
 | *"the France Travail / Adzuna key"* | Sections **5c** and **5e**. **Never ask for a secret in the conversation** — see below |
 

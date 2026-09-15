@@ -80,6 +80,7 @@ leave the rest of the config untouched. The named sections:
 | Argument | Section | Use it when |
 | :-- | :-- | :-- |
 | `profile` | 1 | New CV, new export, a career step to add |
+| `template` | 1b | Change the visual PDF template used for generated CVs |
 | `contact` | 2 | Address, phone, `signature`, `repos` |
 | `commute` | 3 | Moved, or changed what commute they will accept |
 | `languages` | 4 | A language became working rather than passive |
@@ -227,6 +228,30 @@ asks for a click. Issue #111.
 Then copy it to `$JOB_HUNT_HOME/profile/` and extract the history from it. Say plainly that a
 CV is a *summary*: it will under-represent the user's stack compared with the
 LinkedIn exports, and they can add Route A later with `/job-setup`.
+
+### 1b — required visual template for generated CVs
+
+**Before generating any tailored CV, ask for one PDF whose *format* the person
+wants to keep.** It is a visual template, not factual input: its name, jobs,
+dates and claims are never copied into a new CV. Ask them to drop a PDF into
+the conversation or select one already in the workspace; do not demand an
+absolute path.
+
+Copy it as `$JOB_HUNT_HOME/profile/template-source.pdf`, then render each page
+to PNG (`pdftoppm -png -r 144 template-source.pdf template-page`). Use vision
+to inspect hierarchy, typography, margins, rules, section spacing and page
+breaks. Recreate only that design as either HTML/CSS (the default) or LaTeX,
+according to the person's choice: **HTML or LaTeX is the output format, never
+the source CV content.** Store the selected engine and the generated template
+assets under `$JOB_HUNT_HOME/profile/template/`; record the source filename and
+engine in `candidate.md`.
+
+Validate the new template by rendering a neutral sample, extracting its PDF
+text with `pdftotext -layout`, and visually reviewing screenshots with vision.
+If the PDF is scanned, its visual format is still usable; say that its text
+will not be used as evidence. If the person already completed setup, invoke
+`/cv-template` or ask to **change my CV template**; it replaces only the
+template assets and leaves their factual profile and past applications intact.
 
 ### Route C — dictate it
 
