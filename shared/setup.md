@@ -132,7 +132,21 @@ fetch these URLs from a script: `shared/robots-policy.md` records that
 LinkedIn refuses this project by name, the user-driven agent included. What is
 being read is a page the person is looking at.
 
-Ask them to open their profile, then for each of the five sections:
+**When `mcp-chrome` is connected (automatic):**
+Automate this completely — **do not ask the user to manually copy-paste text
+or print PDFs.** Run:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT:-.}/skills/cover-letter/sync-profile-mcp.js" "<handle>"
+```
+
+The script connects to `mcp-chrome`, navigates through the five sections
+inside the user's authenticated session, saves each section to `profile/.text/`,
+and closes the temporary tab automatically.
+
+**Fallback only (when `mcp-chrome` is absent or disconnected):**
+If the browser connection is unavailable, ask them to open their profile,
+then for each of the five sections:
 
 | Section | Page |
 | :-- | :-- |

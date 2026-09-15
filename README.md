@@ -733,8 +733,14 @@ REPO="$PWD"
 
 ### Required once: mcp-chrome
 
-All browser work uses [mcp-chrome](https://github.com/hangwin/mcp-chrome) at
-`http://127.0.0.1:12306/mcp`.
+All browser work uses [mcp-chrome](https://github.com/hangwin/mcp-chrome).
+
+1. **Install the Chrome extension**:
+   - Download the extension build from [hangwin/mcp-chrome releases](https://github.com/hangwin/mcp-chrome/releases).
+   - Open `chrome://extensions/`, enable **Developer mode**, click **Load unpacked**, and select the extension folder.
+   - Click the extension icon in Chrome and click **Connect**.
+
+2. **Install and register the native bridge**:
 
 ```sh
 node --version                    # Node.js 20+ required
@@ -742,9 +748,9 @@ npm install -g mcp-chrome-bridge
 mcp-chrome-bridge register
 ```
 
-The bridge installation is automatic. Loading the downloaded mcp-chrome
-extension in `chrome://extensions/` and clicking its **Connect** button is the
-one deliberate human handoff. Before browser work, the plugin asks **“Which
+The bridge registration configures Chrome Native Messaging (`com.chromemcp.nativehost.json`) so the extension can communicate with local MCP clients.
+
+Before browser work, the plugin asks **“Which
 Chrome profile should I use?”** It must not select a profile, sign in, solve
 CAPTCHA, approve permissions or 2FA, upload a file, or submit an application.
 
@@ -769,11 +775,17 @@ codex mcp add mcp-chrome --url http://127.0.0.1:12306/mcp
 
 ```sh
 agy plugin install "$REPO/adapters/antigravity/plugin"
-agy mcp add mcp-chrome http://127.0.0.1:12306/mcp
+
+# Recommended: stdio (CLI) mode — Antigravity manages the MCP process directly:
+BRIDGE_PATH="$(npm root -g)/mcp-chrome-bridge/dist/mcp/mcp-server-stdio.js"
+agy mcp add mcp-chrome node "$BRIDGE_PATH"
+
+# Alternative: HTTP transport
+# agy mcp add mcp-chrome http://127.0.0.1:12306/mcp
 ```
 
 The plugin also carries `mcp_config.json`; the explicit `agy mcp add` makes the
-endpoint available even when a host does not import plugin MCP settings.
+server available even when a host does not import plugin MCP settings.
 
 ### OpenCode
 
