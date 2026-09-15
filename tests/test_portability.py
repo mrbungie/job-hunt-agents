@@ -74,6 +74,9 @@ class ProjectInstallation(unittest.TestCase):
             project.mkdir()
             command = [sys.executable, str(installer), "--host", "codex", "--project", str(project)]
             self.assertEqual(subprocess.run(command, capture_output=True, text=True).returncode, 0)
+            discovered = project / ".agents" / "skills" / "job-scan"
+            self.assertTrue(discovered.is_symlink())
+            self.assertEqual(discovered.resolve(), (project / ".job-hunt-agents" / "codex" / "skills" / "job-scan").resolve())
             self.assertEqual(subprocess.run(command, capture_output=True, text=True).returncode, 0)
             owned = project / ".job-hunt-agents" / "codex" / "HOST.md"
             owned.write_text("local edit\n", encoding="utf-8")
@@ -84,4 +87,3 @@ class ProjectInstallation(unittest.TestCase):
             result = subprocess.run(command + ["--uninstall"], capture_output=True, text=True)
             self.assertEqual(result.returncode, 2)
             self.assertTrue(owned.exists())
-

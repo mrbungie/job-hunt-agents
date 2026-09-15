@@ -45,6 +45,33 @@ def _changed(destination, manifest):
     return [relative for relative, digest in manifest["files"].items() if not (destination / relative).is_file() or _digest(destination / relative) != digest]
 
 
+def _discovery_root(host):
+    if host in ("codex", "antigravity"):
+        return pathlib.Path(".agents") / "skills"
+    if host == "opencode":
+        return pathlib.Path(".opencode") / "skills"
+    return None
+
+
+def _links(host, project, destination, skills_root=None):
+    discovery = _discovery_root(host)
+    if discovery is None:
+        return {}
+    return {
+        str(discovery / skill.name): os.path.relpath(destination / "skills" / skill.name, project / discovery)
+        for skill in (skills_root or destination / "skills").iterdir() if skill.is_dir() and (skill / "SKILL.md").is_file()
+    }
+
+
+def _changed_links(project, links):
+    changed = []
+    for relative, target in links.items():
+        path = project / relative
+        if not path.is_symlink() or os.readlink(path) != target:
+            changed.append(relative)
+    return changed
+
+
 def _remove_empty_parents(path, stop):
     while path != stop and path.exists() and not any(path.iterdir()):
         path.rmdir()
@@ -62,6 +89,7 @@ def install(host, project, dry_run=False, uninstall=False):
     previous = _load_manifest(destination) if destination.exists() else None
     if previous:
         changed = _changed(destination, previous)
+        changed += _changed_links(project, previous.get("links", {}))
         if changed:
             raise RuntimeError("conflict: changed owned files: " + ", ".join(changed))
     if uninstall:
@@ -74,19 +102,34 @@ def install(host, project, dry_run=False, uninstall=False):
             if target.exists():
                 target.unlink()
                 _remove_empty_parents(target.parent, destination)
+        for relative in previous.get("links", {}):
+            target = project / relative
+            if target.is_symlink():
+                target.unlink()
+                _remove_empty_parents(target.parent, project)
         (destination / MANIFEST).unlink(missing_ok=True)
         _remove_empty_parents(destination, project)
         return f"removed {destination}"
     with tempfile.TemporaryDirectory() as tmp:
         bundle = builder.build(host, pathlib.Path(tmp) / host, ROOT)
         manifest = {"host": host, "files": _files(bundle)}
+        manifest["links"] = _links(host, project, destination, bundle / "skills")
         if dry_run:
             return f"would install {host} into {destination}"
+        for relative, target in manifest["links"].items():
+            link = project / relative
+            if (link.exists() or link.is_symlink()) and (not link.is_symlink() or os.readlink(link) != target):
+                raise RuntimeError(f"conflict: discovery path already exists: {relative}")
         destination.mkdir(parents=True, exist_ok=True)
         for relative in manifest["files"]:
             source, target = bundle / relative, destination / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, target)
+        for relative, target in manifest["links"].items():
+            link = project / relative
+            if not (link.exists() or link.is_symlink()):
+                link.parent.mkdir(parents=True, exist_ok=True)
+                link.symlink_to(target)
         (destination / MANIFEST).write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return f"installed {host} into {destination}"
 
