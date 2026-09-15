@@ -710,11 +710,20 @@ Strictly truthful, reordered to foreground what THIS ad wants. Length follows
 **ATS compliance is mandatory** — the resume must parse cleanly in applicant
 tracking systems:
 
-**Length is the user's setting, not a design preference.** Read
-`documents.resume_length` before drafting or compacting. `one_page` means one
-page; `generous` permits up to three pages of relevant, factual material. Never
-delete experience, force a tiny type size, or declare a one-page CV preferable
-when the configured setting is generous. Only the cover letter is exactly one
+**Quality and factual completeness outrank page count.** A CV must preserve
+the person's real employment history, dates, employers, roles, material scope,
+and relevant achievements. Never hide an older role, a career transition, a
+period of employment, a promotion, or a verified achievement merely to make a
+document shorter. Use clear hierarchy and proportional detail instead: recent
+and job-relevant roles receive more evidence; older roles are summarised
+honestly, never erased.
+
+Read `documents.resume_length` as a preference, not a quota. If the content
+could reasonably be presented in materially different ways (for example, a
+dense one-page summary versus a two- or three-page detailed CV), show the
+trade-off and ask the user which they want. Do not ask when the choice is
+illusory: render the complete, well-designed version. Never force tiny type,
+aggressive margins or arbitrary cuts. Only the cover letter is exactly one
 page.
 
 - **Single column, linear top-to-bottom flow.** No tables, no multi-column
