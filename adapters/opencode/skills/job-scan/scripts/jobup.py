@@ -1,0 +1,406 @@
+#!/usr/bin/env python3
+"""Sweep jobup.ch and jobs.ch over plain HTTP — no browser, no cookie, no login.
+
+**The adapter files made the Chrome extension a prerequisite**, so a user
+without it had no Swiss sweep at all, on the two largest boards in this
+repository. Measured 2026-09-02: twelve ads and three listing pages answer
+`200` to a plain request, and **the structured data is in the HTML that
+arrives**. Issue #68.
+
+WHERE THE DATA IS, WHICH IS NOT WHERE THE ISSUE EXPECTED IT. The listing page
+carries **one `JobPosting` per card**, wrapped in an `ItemList`:
+
+    {"@type": "ItemList", "itemListElement":
+       [{"@type": "ListItem", "position": 1,
+         "item": {"@type": "JobPosting", …}}, …]}
+
+and those carry **title, employer, date, employment type, url, identifier and
+the location** — `addressLocality` filled on 13 of 20. **The ad page's own
+`jobLocation` is empty on 12 of 12**, so the geography lives on the listing and
+only there. A sweep that reads ad pages for location loses it.
+
+*(`_ldjson.py` unwraps `ItemList` because of this: it previously saw zero
+postings on a page holding twenty.)*
+
+TWO THINGS THE LISTING DOES NOT CARRY: the full description and any salary.
+The description is on the ad page, in its own `JobPosting`, 1 443 to 6 247
+characters. `--with-description` fetches it, one request per ad.
+
+A PROMOTED CARD IS REPEATED ACROSS PAGES. Measured: one ad sat at position 13
+of page 1 **and position 1 of page 2**. So ids are deduplicated and the repeats
+are counted out loud — **but a repeat is not a pagination failure**, and the
+two are told apart: a page whose ids are *entirely* contained in what came
+before has not advanced (exit 6), while a handful of repeats is paid placement.
+
+AND AN AD URL ANSWERS IN FOUR WAYS, WHICH `ad` READS BEFORE ITS BODY.
+`shared/boards/jobup.md` has the table: `410` is gone and still serves the ad's
+own block, an expired ad **redirects to its trade's category page** carrying
+twenty valid postings and no mention of the job, `404` never existed, and only
+a plain `200` is the advert. **The block count decides none of it** (#88).
+
+    jobup.py search --site jobup --term developpeur --pages 2
+    jobup.py search --site jobs-ch --term entwickler --location Bern
+    jobup.py ad --url https://www.jobup.ch/fr/emplois/detail/<uuid>/
+"""
+
+import argparse
+import json
+import re
+import sys
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+
+from _decode import decode_body
+from _ldjson import label, one, postings
+
+from _locations import drop_report
+
+from _robots import allowed as robots_allowed, full_path
+from _robots import verdict as robots_verdict
+
+from _zero import empty_first_page, zero_note
+
+SITES = {
+    "jobup": {"host": "www.jobup.ch", "path": "/fr/emplois/",
+              "detail": "/fr/emplois/detail/"},
+    "jobs-ch": {"host": "www.jobs.ch", "path": "/de/stellenangebote/",
+                "detail": "/de/stellenangebote/detail/"},
+}
+from _ua import UA
+
+DEFAULT_SITE = "jobup"
+EXIT_PARTIAL = 6
+
+
+def die(msg, code=2):
+    print(f"ERROR: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+# **The tag named one of the two boards this adapter reads, always.** Running
+# `--site jobs-ch` printed `[jobup] 20 ad(s) …` while the records carried
+# `jobs-ch:` ids and `www.jobs.ch` URLs — the data was right and every
+# sentence about it was wrong. A reader checks the sentence. Issue #129's
+# shape, on the tag itself.
+_TAG = "jobup"
+
+
+def note(msg):
+    print(f"[{_TAG}] {msg}", file=sys.stderr)
+
+
+def gate(url):
+    """Ask on the exact URL, at the point every request passes. #176.
+
+    **This module decided on `verdict(host)["sweep"]` and nothing else.**
+    `sweep` answers *is this host closed in one block* under `OUR_AGENTS` —
+    six names a site may use **about** us, four of which we never send. So the
+    owner's decision of 2026-09-07, that a named refusal binds only the token
+    it names, reached `allowed()` and reached this module not at all.
+
+    **And a sweep verdict is not a path verdict.** `hiringcafe.com` answers
+    `sweep: True` above its own reason — *"this host refuses 17 path(s) to
+    `*`"* — so deciding on `sweep` alone fetches paths the rules close.
+
+    The pre-flight `sweep` check stays where it is: it is a **report** about
+    the host, and this is the **decision** about the path.
+    """
+    parts = urllib.parse.urlsplit(url)
+    if not parts.netloc:
+        return
+    a = robots_allowed(parts.netloc, full_path(parts))
+    # An unknown is not a refusal, and `not None` is `True` for both.
+    if a["allowed"] is None:
+        die(f"{url}: {a['reason']}", 8)
+    if not a["allowed"]:
+        die(f"{url}: {a['reason']}", 7)
+
+
+def get(url):
+    gate(url)
+    """Returns `(status, body, landed)`. **Where it landed is half the signal.**"""
+    req = urllib.request.Request(url, headers={
+        "User-Agent": UA,
+        # identity, because a compressed body makes every size measurement in
+        # this file a different number (#71).
+        "Accept-Encoding": "identity",
+        "Accept": "text/html,application/xhtml+xml",
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=45) as r:
+            return r.getcode(), decode_body(r.read(), r.headers)[0], r.geturl()
+    except urllib.error.HTTPError as e:
+        return (e.code, decode_body(e.read(), e.headers)[0],
+                getattr(e, "url", url))
+    except (urllib.error.URLError, OSError) as e:
+        die(f"{url}: {e}")
+
+
+def card(site, p):
+    """One row, from the listing's own JobPosting. Values, never keys."""
+    ident = one(p.get("identifier")).get("value")
+    org = one(p.get("hiringOrganization"))
+    addr = one(one(p.get("jobLocation")).get("address"))
+    sal = one(p.get("baseSalary"))
+    amount = one(sal.get("value"))
+    # **The salary block is a shell.** Served as MonetaryAmount + an empty
+    # QuantitativeValue on every ad measured: counting the key gives 100%,
+    # counting the value gives 25% (#67).
+    figure = amount.get("value") or amount.get("minValue") or amount.get("maxValue")
+    return {
+        "id": ident,
+        "ledger_id": f"{site}:{ident}",
+        "url": p.get("url"),
+        "title": p.get("title"),
+        "company": org.get("name"),
+        # The ad page's own jobLocation is empty on every ad measured; this is
+        # the only place the town appears.
+        "location_text": addr.get("addressLocality"),
+        "country": addr.get("addressCountry"),
+        "posted": p.get("datePosted"),
+        "employment_type": label(p.get("employmentType")),
+        "salary_stated": bool(figure),
+        "salary_value": figure,
+        "salary_currency": sal.get("currency"),
+    }
+
+
+def resolve_site(chosen):
+    """`(site, message_or_None)` — the default, and whether to say so.
+
+    **A pure function on purpose.** The announcement used to sit inline, and a
+    test could only assert *where* the line was written, never *when* it runs.
+    A `if True:` nested in the same span kept it in place and fired it on every
+    call, and the check stayed green: it was reading position, not condition.
+    **Here the condition is the return value**, so a case can call it twice and
+    compare.
+    """
+    if chosen is not None:
+        return chosen, None
+    return DEFAULT_SITE, (
+        f"no --site given, reading **{SITES[DEFAULT_SITE]['host']}**. This "
+        f"adapter serves {len(SITES)} boards ({', '.join(sorted(SITES))}) and "
+        f"defaults to `{DEFAULT_SITE}` — **if you meant the other one, say "
+        f"so**: the records would carry `{DEFAULT_SITE}:` ids and look like a "
+        f"normal answer.")
+
+
+def cmd_search(a):
+    # **An invocation that cannot return anything must not be accepted.**
+    # `search` with no filter fetches the bare listing, which serves no
+    # structured data at all — measured 2026-09-03: `/fr/emplois/` is 275 kB
+    # with **zero** `JobPosting`, while `?term=developpeur` is 534 kB with
+    # **22**. So a filterless run returned zero, reliably, and the zero was
+    # read as the board being empty. **A tool that accepts a call which cannot
+    # succeed manufactures false results.** Issue #126.
+    if not (a.term or a.location):
+        die("give --term, or --location, or both.\n"
+            "  **A zero from the unfiltered listing cannot be read**, and "
+            "that is the reason — not that it is always empty.\n"
+            "  Measured 2026-09-03: `/fr/emplois/` was 275 kB with **zero** "
+            "`JobPosting`, against 534 kB and 22 for `?term=developpeur`. "
+            "**Measured again 2026-09-04, the same URL carried 20** — and so "
+            "did `jobs.ch`'s. **Two observations a day apart, opposite, and "
+            "nothing here can tell a deployment from an intermittency.**\n"
+            "  So the refusal stands on what holds either way: **a count "
+            "taken from this URL means one thing today and another "
+            "yesterday**, and a zero from it was already read once as a dead "
+            "board — this board, this repository, #122. A filter makes the "
+            "answer interpretable. No request was made.", 2)
+
+    global _TAG
+    # **`--site` used to default silently to `jobup`.** Two boards share this
+    # adapter, and somebody who enabled jobs.ch and typed the general form got
+    # twenty jobup.ch advertisements, HTTP 200, no warning — the `ledger_id`
+    # prefix was the only tell, and it is in the JSON, not in the message.
+    #
+    # **The default still holds; it no longer holds quietly.** The line is
+    # printed only when nobody chose, because a warning that fires on correct
+    # use is noise.
+    a.site, said = resolve_site(a.site)
+    if said:
+        note(said)
+    _TAG = a.site
+    site = SITES[a.site]
+    v = robots_verdict(site["host"])
+    if not v["sweep"]:
+        die(f"{site['host']}: {v['reason']}", 8 if v["sweep"] is None else 7)
+    seen, rows, repeats, partial = set(), [], 0, False
+    for page in range(1, a.pages + 1):
+        # **`location` goes into the URL.** It used to be applied only after
+        # the fetch, by `drop_report`, so `--location Lausanne` alone
+        # requested the *unfiltered* listing — zero results — and then
+        # filtered nothing. The site accepts it: `?location=Lausanne` answers
+        # with 22 `JobPosting` on jobup. Issue #126.
+        q = {}
+        if a.term:
+            q["term"] = a.term
+        if a.location:
+            q["location"] = a.location
+        if page > 1:
+            q["page"] = page
+        url = f"https://{site['host']}{site['path']}?" + urllib.parse.urlencode(q)
+        status, body, _ = get(url)
+        if status != 200:
+            die(f"{url}: HTTP {status}")
+        found = postings(body)
+        if not found and page == 1:
+            # #181: page 1 with no JobPosting used to print the three-causes
+            # sentence below and exit 0 with an empty stdout — the admission
+            # on stderr, the verdict on the exit code, and the exit code said
+            # fine. Page 1 is INDETERMINATE, exit 6, size beside the zero.
+            die(empty_first_page(a.site, body, "JobPosting",
+                                 what_asked=", ".join(f"{k}={v!r}" for k, v in
+                                                      (("term", a.term), ("location", a.location)) if v) or None), 6)
+        if not found:
+            # **Three causes, and the message used to name two.** The one
+            # it left out is the one that produced a false report of a dead
+            # board: a query this site does not answer with structured data.
+            # Naming two of three is not a false statement, and it had the
+            # same effect as one — it pointed at "the board is broken".
+            # Issue #126.
+            asked = ", ".join(f"{k}={v!r}" for k, v in
+                              (("term", a.term), ("location", a.location))
+                              if v) or "nothing"
+            note(f"page {page} carried no JobPosting — stopping. "
+                 f"**Three things look like this and they are not the "
+                 f"same.** (1) The end of the results. (2) A reading failure "
+                 f"— the markup changed and a page with cards is being "
+                 f"misread. (3) **A query this site did not answer with "
+                 f"structured data**: you asked for {asked}. On "
+                 f"{site['host']}, `location` alone is honoured by jobup and "
+                 f"**not** by jobs.ch — `?location=` and the bare URL return "
+                 f"byte-identical pages there. **And the unfiltered listing "
+                 f"has been measured both ways within a day** (#126), so a "
+                 f"zero from it dates faster than a card can record it. Try "
+                 f"a `--term` before reading this as an empty board.")
+            break
+        ids = {one(p.get("identifier")).get("value") for p in found}
+        # Entirely repeated → the pagination did not advance. A few repeats →
+        # paid placement, which is what a promoted card looks like.
+        if ids and ids <= seen:
+            # **The sentence was right and the behaviour contradicted it.**
+            # `sys.exit` here left the loop *and* skipped the print stage
+            # below, so the run announced "N row(s) so far and they are good"
+            # on stderr and put nothing on stdout — a total, silent loss for
+            # anything reading stdout, which is the whole chain. The other
+            # early stop in this loop uses `break` and does reach the print;
+            # two exits from one loop, and only one of them worked. #134.
+            note(f"page {page} repeats page {page - 1} entirely — the "
+                 f"pagination did not advance. Stopping rather than looping; "
+                 f"{len(rows)} row(s) so far and they are good, and they are "
+                 f"on stdout below.")
+            partial = True
+            break
+        for p in found:
+            row = card(a.site, p)
+            if not row["id"] or row["id"] in seen:
+                repeats += 1
+                continue
+            seen.add(row["id"])
+            rows.append(row)
+        time.sleep(a.delay)
+    if a.location:
+        # Three values, not two — `(kept, dropped, labels)`. Unpacking two
+        # raised `ValueError` on every `--location` run, after the sweep had
+        # already been paid for.
+        rows, dropped, labels = drop_report(rows, a.location)
+        if dropped:
+            note(f"{dropped} row(s) dropped by the `{a.location}` filter, "
+                 f"applied again here on the text the cards carry: "
+                 f"{dict(sorted(labels.items(), key=lambda kv: -kv[1])[:5])}")
+    for row in rows[:a.limit] if a.limit else rows:
+        print(json.dumps(row, ensure_ascii=False))
+    if not rows:
+        note(zero_note(a.site, what=a.term, where=a.location))
+    stated = sum(1 for r in rows if r["salary_stated"])
+    located = sum(1 for r in rows if r["location_text"])
+    note(f"{len(rows)} ad(s) over {a.pages} page(s). "
+         f"salary: {stated} of {len(rows)} carry a figure — **the block is "
+         f"present on all of them and empty on most** (#67). "
+         f"location: {located} of {len(rows)}; the ad page does not carry it "
+         f"at all, so this is the only source.")
+    if repeats:
+        note(f"{repeats} card(s) repeated across pages and were deduplicated — "
+             f"paid placement, not a pagination failure: one ad was measured "
+             f"at position 13 of page 1 and position 1 of page 2.")
+    if partial:
+        # **The status still says partial; only its timing changed.** Exit 6
+        # after stdout has the rows, not instead of them.
+        sys.exit(EXIT_PARTIAL)
+
+
+def cmd_ad(a):
+    global _TAG
+    host = urllib.parse.urlsplit(a.url).netloc
+    # **The second way in, and it had the same defect.** `ad` takes a URL
+    # rather than `--site`, so nothing here ever set the tag: reading a
+    # `www.jobs.ch` advertisement printed `[jobup]` over every line about it.
+    for name, cfg in SITES.items():
+        if cfg["host"] == host:
+            _TAG = name
+            break
+    v = robots_verdict(host)
+    if not v["sweep"]:
+        die(f"{host}: {v['reason']}", 8 if v["sweep"] is None else 7)
+    status, body, landed = get(a.url)
+    # **Status, then where it landed, then the ad's own isActive — the block
+    # count decides none of it.** jobup.md carries the four-state table (#88).
+    if status == 410:
+        die(f"{a.url}: HTTP 410 — the board says this ad is gone. It still "
+            f"serves the ad's own text and its own JobPosting block, so a "
+            f"check that counts blocks would call it open.", 3)
+    if status == 404:
+        die(f"{a.url}: HTTP 404 — this id never existed on this board. That is "
+            f"a different fact from an ad that closed.", 3)
+    if landed.rstrip("/") != a.url.rstrip("/"):
+        die(f"{a.url} redirected to {landed}. **It is forbidden to conclude "
+            f"'open' from a page reached by a redirect**: an expired ad lands "
+            f"on its trade's category page, which carries ~20 valid "
+            f"JobPosting blocks and no mention of the job (#88).", 3)
+    found = postings(body)
+    if not found:
+        die(f"{a.url}: HTTP 200, no redirect, and no JobPosting. Read the page "
+            f"before concluding anything — this is neither a served ad nor a "
+            f"recognised absence.")
+    p = found[0]
+    row = card("jobup" if "jobup" in host else "jobs-ch", p)
+    row["url"] = a.url
+    desc = p.get("description") or ""
+    row["description_chars"] = len(desc)
+    if a.with_text:
+        row["description"] = desc
+    print(json.dumps(row, ensure_ascii=False))
+
+
+def main():
+    p = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = p.add_subparsers(dest="cmd", required=True)
+    s = sub.add_parser("search", help="read the listing, one request per page")
+    # `default=None`, not `default="jobup"`: argparse cannot otherwise tell
+    # a chosen `jobup` from an unchosen one, and the announcement below has to.
+    s.add_argument("--site", choices=sorted(SITES), default=None,
+                   help=f"which of the two boards ({', '.join(sorted(SITES))})"
+                        f"; defaults to {DEFAULT_SITE}, and says so when it "
+                        f"does")
+    s.add_argument("--term")
+    s.add_argument("--location", help="town filter, accent-insensitive")
+    s.add_argument("--pages", type=int, default=1)
+    s.add_argument("--limit", type=int)
+    s.add_argument("--delay", type=float, default=1.0)
+    s.set_defaults(func=cmd_search)
+
+    d = sub.add_parser("ad", help="one ad, with its open/closed state")
+    d.add_argument("--url", required=True)
+    d.add_argument("--with-text", action="store_true", dest="with_text")
+    d.set_defaults(func=cmd_ad)
+    a = p.parse_args()
+    a.func(a)
+
+
+if __name__ == "__main__":
+    main()

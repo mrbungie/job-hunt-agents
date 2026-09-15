@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "mcp-chrome": {
+      "serverUrl": "http://127.0.0.1:12306/mcp"
+    }
+  }
+}

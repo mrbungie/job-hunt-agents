@@ -1,21 +1,21 @@
 # Host compatibility
 
-The portable core is Python 3.9+ and standard-library only. Build and install
-operations were fixture-tested locally on 2026-09-15; host runtimes and browser
-backends were not live-tested by this change.
+The portable core is Python 3.9+ and standard-library only. Native manifests
+were validated locally on 2026-09-15; host runtimes and browser backends were
+not live-tested by this change.
 
 | Host | Package | Skills | Hooks | Browser/session/upload | Status |
 | --- | --- | --- | --- | --- | --- |
 | Claude Code | retained plugin manifest | upstream layout | none added | existing Claude integration only | package fixture-tested |
-| Codex | project bundle | canonical `skills/` tree | explicit preflight only | unknown | package fixture-tested |
-| Antigravity | project bundle | canonical `skills/` tree | explicit preflight only | unknown | package fixture-tested |
-| OpenCode | project bundle | canonical `skills/` tree | explicit preflight only | unknown | package fixture-tested |
+| Codex | Codex marketplace plugin | package `skills/` tree | none | mcp-chrome configured separately | manifest validated |
+| Antigravity | local Agy plugin | package `skills/` tree | none | mcp-chrome in plugin configuration | CLI validated |
+| OpenCode | project skills + config fragment | package `skills/` tree | none | mcp-chrome config fragment | schema fixture-tested |
 
-Run a preflight from an installed package before workflows that need local
-files or a renderer:
+Run a preflight from the clone before workflows that need local files or a
+renderer:
 
 ```sh
-python3 .job-hunt-agents/codex/bin/preflight.py
+python3 bin/preflight.py
 ```
 
 `browser`, `logged_in_session`, and `upload` deliberately remain `unknown`:

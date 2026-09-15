@@ -752,33 +752,59 @@ Adding a module for your country is the most useful contribution you can make.
 
 ---
 
-## Portable host bundles (experimental)
+## Install from a local clone
 
-Claude Code continues to use the plugin install instructions above. For Codex,
-Antigravity, or OpenCode, create a project-scoped bundle from a checkout:
-
-```sh
-python3 bin/install-host.py --host codex --project /path/to/your/project
-```
-
-Replace `codex` with `antigravity` or `opencode`. This writes only under
-`.job-hunt-agents/<host>` in that project, refuses to overwrite an edited owned
-file, and can preview or remove its own unchanged files:
+Clone this repository once, then use the native installer for your harness. Do
+not use the retired experimental copier: it is not a host-plugin installer.
 
 ```sh
-python3 bin/install-host.py --host codex --project /path/to/your/project --dry-run
-python3 bin/install-host.py --host codex --project /path/to/your/project --uninstall
+git clone https://github.com/mrbungie/job-hunt-agents.git
+cd job-hunt-agents
 ```
 
-To make a movable distribution instead, run:
+### Claude Code
 
 ```sh
-python3 bin/build-host.py --host codex --output /tmp/job-hunt-codex
+claude plugin marketplace add .
+claude plugin install claude-job-hunt@claude-job-hunt --scope user
 ```
 
-See [`docs/compatibility.md`](docs/compatibility.md) for the evidence-based
-support matrix. Browser-dependent work is not claimed portable until it has
-been exercised with that host's browser backend.
+### Codex
+
+```sh
+codex plugin marketplace add .
+codex plugin add job-hunt-agents@job-hunt-agents
+codex mcp add mcp-chrome --url http://127.0.0.1:12306/mcp
+```
+
+### Antigravity CLI (Agy)
+
+```sh
+agy plugin install ./adapters/antigravity/plugin
+```
+
+The plugin carries its own `mcp_config.json` for mcp-chrome. Confirm it with
+`/mcp` before browser work.
+
+### OpenCode
+
+Copy the project adapter into the project where you run OpenCode, then merge its
+MCP entry into that project's `opencode.json`:
+
+```sh
+mkdir -p /path/to/project/.opencode
+cp -R adapters/opencode/skills /path/to/project/.opencode/
+cp adapters/opencode/opencode.json /path/to/project/opencode.job-hunt.json
+(cd /path/to/project && opencode mcp add mcp-chrome --url http://127.0.0.1:12306/mcp)
+```
+
+Merge the `mcp-chrome` object from `opencode.job-hunt.json` into the project's
+existing `opencode.json`; do not overwrite unrelated MCP servers or settings.
+OpenCode discovers skills under `.opencode/skills/`.
+
+For every host, install and connect mcp-chrome in the Chrome profile you choose
+before browser work. The workflow asks for that profile and stops for CAPTCHA,
+authentication, permissions and final submission.
 
 ---
 

@@ -1,0 +1,20 @@
+{
+  "name": "job-hunt-agents",
+  "interface": {
+    "displayName": "Job Hunt Agents"
+  },
+  "plugins": [
+    {
+      "name": "job-hunt-agents",
+      "source": {
+        "source": "local",
+        "path": "./plugins/job-hunt-agents"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

@@ -1,0 +1,313 @@
+# claude-job-hunt — user configuration
+#
+# Lives in your workspace, NOT in the plugin:
+#   $JOB_HUNT_HOME/config.yml     (default: ~/Documents/job_applications/config.yml)
+#
+# Normally written for you by `/job-setup`. Editing it by hand is fine and
+# supported — every value below is documented, and the skills re-read the file
+# on every run. Run `/job-setup` again to change it conversationally.
+#
+# The example values describe a fictional person. Replace all of them.
+
+version: 1
+
+candidate:
+  # Your full name, as it should appear on the documents.
+  name: "Ada Lovelace"
+  # Used to build the output filenames: <family>_<given>_<Company>.pdf
+  # e.g. Lovelace_Ada_Acme.pdf and Lovelace_Ada_Acme_CoverLetter.pdf
+  family_name: "Lovelace"
+  given_name: "Ada"
+  # Your public LinkedIn profile URL. Used to refresh the exports and, where
+  # readable, as a supplementary source. Leave empty if you have no LinkedIn.
+  linkedin: "https://www.linkedin.com/in/adalovelace"
+
+location:
+  # Where every commute is measured FROM. Be precise — town plus region — so
+  # travel times can be estimated: "Bristol, England" not "UK".
+  home_base: "Bristol, England"
+  # Longest one-way commute you accept, in minutes. An ad requiring regular
+  # physical presence beyond this is discarded whatever its score.
+  # Set to 0 if you will only consider fully remote work.
+  max_commute_minutes: 90
+  # Which work modes you accept: on-site, hybrid, remote. Remove what you
+  # will not consider — a removed mode is filtered out before scoring.
+  work_modes: [remote, hybrid, on-site]
+  # WHERE YOU MAY WORK WITHOUT SPONSORSHIP — countries and zones, not a status.
+  # Zone names understood: EU, EFTA, EEA. Everything else is an ISO-2 code.
+  #
+  # This is the ONLY thing the plugin asks about the right to work. It never
+  # records nationality, permit type or status: it needs the answer to one
+  # question, not an immigration file.
+  #
+  # An ad from a country outside this list is still scanned, still scored and
+  # still shown. What changes is one sentence at the gate: a local employment
+  # contract there would need sponsorship, while invoicing that country from
+  # here is a different legal object and may well be open. A remote post does
+  # not change it by itself — a remote job with a British employer is still
+  # British employment.
+  #
+  # DELETE THE KEY to switch this off entirely: with no list, nothing is ever
+  # flagged and the plugin behaves exactly as it did before.
+  work_authorization: ["CH", "EU"]
+  # A DRIVING LICENCE AND A VEHICLE — two fields, because ads ask for one, the
+  # other, or both, and a single boolean loses the distinction that decides
+  # field roles: "permis B" is the legal capacity to drive, "véhicule
+  # personnel indispensable" is having a car.
+  #
+  # `driving_licence` is the list of categories held. An EMPTY LIST means you
+  # have declared you hold none — which is NOT the same as deleting the key.
+  # DELETE BOTH KEYS to switch this off: nothing is ever flagged, and an ad
+  # that asks becomes a question at the gate rather than a silence.
+  #
+  # Nothing is ever discarded for these. Absent from the file is not a no, and
+  # a false "they don't have it" costs an ad wrongly dropped.
+  driving_licence: ["B"]
+  own_vehicle: true
+  # BUSINESS TRAVEL IS A DEGREE, NOT A FACT — which is why this is a phrase
+  # and not a boolean. Measured on 49 advertisements, 2026-09-04: every real
+  # requirement stated an amount — "3–4 weeks per year", "on a limited basis",
+  # "déplacements inter-sites sont probables". **A yes does not meet any of
+  # them**: somebody who will travel three weeks a year and somebody who will
+  # travel monthly both say yes.
+  #
+  # Write what you will actually do, in your own words. It is read back to
+  # you beside what the ad asks; nothing compares them for you, and nothing
+  # is ever discarded for it — a travel requirement is a question at the
+  # gate. DELETE THE KEY if you would rather be asked each time.
+  travel: "a few weeks a year, Europe"
+  # Location strings used in job-board searches, most specific first. These
+  # are what the board itself understands, so use its own spelling.
+  search_locations:
+    - "Bristol, England, United Kingdom"
+    - "United Kingdom"
+
+languages:
+  # Languages you can genuinely work in — write, interview, negotiate.
+  # An ad requiring a language that is not on this list scores 0 on that
+  # requirement, and it is treated as a hard blocker, not a gap.
+  working: ["English", "French"]
+  # Languages you understand but cannot work in professionally. Listed so the
+  # scoring never mistakes them for working proficiency, and so they are kept
+  # out of your resume. Delete the key if it does not apply.
+  passive: ["German (A2, not professional)"]
+  # Language of the conversation and of anything not dictated by the ad.
+  # The resume and cover letter always follow the LANGUAGE OF THE AD instead.
+  interface: "en"
+
+boards:
+  # WHICH JOB BOARDS job-scan MAY SWEEP.
+  #
+  # Nothing is enabled by default, and an unconfigured setup scans NOTHING.
+  # This is deliberate: scanning drives your own browser, inside your own
+  # logged-in session, under your own account — so it never touches a site you
+  # did not explicitly switch on.
+  #
+  # Enable a board by setting `enabled: true` AND filling the settings it
+  # needs. A board that is enabled but incomplete is skipped with a message
+  # saying which value is missing; it is never half-run.
+  #
+  # Only boards with an adapter in shared/boards/ can be enabled. Ask
+  # /job-setup which ones exist, or read shared/boards/README.md.
+  #
+  # ---------------------------------------------------------------------------
+  # OFF, OR MERELY ASLEEP? `enabled: false` MEANS TWO DIFFERENT THINGS.
+  #
+  # A board that comes back empty is either wrong for you, or right for you and
+  # having a quiet month — and those deserve opposite treatment.
+  #
+  #   enabled: false, nothing else
+  #       A hard off. Never swept, never probed, never mentioned again. This is
+  #       the right state for a board serving a trade you are not in.
+  #
+  #   enabled: false PLUS the four dormant_* keys below
+  #       Dormant. Also not swept — but job-scan comes back to you ONCE when
+  #       recheck_after has passed, with a fresh count to compare against the
+  #       one that put it to sleep. Then it backs off: 90 days, 180, then a
+  #       year. Its own settings are kept, so waking it is one line.
+  #
+  # Put COUNTS in dormant_reason, never adjectives. "10 vacancies, all
+  # apprenticeships" is something you can act on in three months; "not
+  # relevant" is a shrug you will not be able to re-read.
+  #
+  #   umantis:
+  #     enabled: false
+  #     dormant_since: "2026-08-30"     # the run that measured the zero
+  #     dormant_reason: "10 vacancies on jobs.bobst.com, all apprenticeships"
+  #     recheck_after: "2026-11-28"     # required — no date means never back
+  #     recheck_count: 0                # empty re-checks so far; drives back-off
+  #     employers: ["jobs.bobst.com"]   # KEPT, so waking it needs no new setup
+  #
+  # ---------------------------------------------------------------------------
+  linkedin:
+    enabled: false
+    # Your own public profile URL. Used to rebuild the detail-page URLs the
+    # setup asks you to print, and as a supplementary source where readable.
+    profile_url: ""
+    # You must be logged in to LinkedIn, yourself, in the Chrome the Claude
+    # extension is connected to. The plugin never signs in for you.
+
+  jobup:
+    # jobup.ch — French-speaking Switzerland. Scanning needs NO login.
+    enabled: false
+    language: "fr"
+
+  jobs-ch:
+    # jobs.ch — jobup's German-language sibling, same JobCloud platform.
+    # Scanning needs NO login. Safe to run ALONGSIDE jobup: an ad on both
+    # boards carries the SAME id, so the ledger holds it once.
+    # Nationally ~3x jobup; in Romandie thinner. Not a replacement.
+    # NOTE: there is no French UI here — "de" (default) or "en" only.
+    enabled: false
+    language: "de"
+
+  solique:
+    # Solique - Swiss employer portals (ISS, Kanton Zurich, Manor, Otto's).
+    # Scanning needs NO login and NO browser.
+    # NOTE: three architectures behind one host. Two serve the whole board
+    # as JSON; the third serves a TRUNCATED HTML page that cannot be paged
+    # (one tenant states 157 ads and serves 25). The adapter reports which
+    # route answered and how complete it was - read that line.
+    enabled: false
+    tenants: []        # e.g. ["iss", "ktzh"] - the path segment of an ad URL
+
+  successfactors:
+    # SAP SuccessFactors - one employer per host. Scanning needs NO login and
+    # NO browser, even though the careers page renders nothing without one.
+    # NOTE: never guess the locale. One the tenant does not publish returns
+    # an EMPTY board with no error - run
+    #   successfactors.py locale --host <host>
+    enabled: false
+    hosts: []          # e.g. ["jobs.bcv.ch"]
+
+  umantis:
+    # Haufe/Abacus umantis — one employer per host. Scanning needs NO login
+    # and NO browser. Reaches Swiss SMEs, communes, clinics and institutes
+    # that HiringCafe does not index AT ALL.
+    # NOTE: there is no tenant resolver for this ATS. Give the careers URL
+    # of each employer; a guessed tenant number serves the vendor's own
+    # marketing page with HTTP 200 and looks like an empty board.
+    enabled: false
+    hosts: []          # e.g. ["jobs.bobst.com", "recruitingapp-2698.umantis.com"]
+
+  randstad:
+    # randstad.ch - the staffing agency's Swiss board (~985 ads over 33
+    # pages). Scanning needs NO login and NO browser.
+    # NOTE: pagination is a PATH segment (/jobs/page-2/), and past the last
+    # page the site silently serves page 1 again - the adapter stops on that
+    # repeat. The employer is never named.
+    enabled: false
+
+  persigo:
+    # persigo.ch - a Swiss staffing agency (central Switzerland, trades and
+    # technical roles). Scanning needs NO login and NO browser, and the whole
+    # board (890 ads) arrives in ONE request.
+    # NOTE: no expiry date anywhere, and NO date on the listing at all. This
+    # board keeps ads for over a year, so 890 is not 890 current openings.
+    # The employer is never named - it is an agency board.
+    enabled: false
+
+  sozialinfo:
+    # sozialinfo.ch - Switzerland's social-sector job portal. Scanning needs
+    # NO login and NO browser, and the whole board (~700 ads) arrives in ONE
+    # request because its pagination is cumulative.
+    # Worth enabling for social work, care, education or public-sector
+    # roles; pointless otherwise. It NAMES the employer, unlike the agency
+    # boards, so duplicate detection works properly on it.
+    enabled: false
+    pages: 24          # ?page=N is cumulative; 24 covered the whole board
+
+  fachkraft:
+    # fachkraft.ch / sta.jobs - Swiss trades and industry, via a staffing
+    # agency. Scanning needs NO login and NO browser, and the whole board
+    # (~3500 ads) arrives in ONE request.
+    # NOTE: fachkraft.ch is the UMBRELLA for sta.jobs and stellenpartner.ch.
+    # Their numeric ids are disjoint, so enabling a brand domain as well adds
+    # no ads and doubles every row. The employer is never named here.
+    enabled: false
+    domain: "www.fachkraft.ch"    # the umbrella - do not add a brand domain
+
+  michaelpage:
+    # Michael Page - the recruitment agency's own board. Scanning needs NO
+    # login and NO browser. Country-scoped like Indeed: `domain` has no
+    # default, because guessing it searches the wrong market.
+    # NOTE: the employer is DESCRIBED and never NAMED on this board. You
+    # cannot research the company before applying, and the ledger cannot
+    # match these ads against the same role on the employer's own ATS.
+    enabled: false
+    domain: "www.michaelpage.ch"
+
+  indeed:
+    # Country-scoped. `domain` has no default: guessing the country would
+    # silently search the wrong market.
+    # NOTE: Indeed serves anti-bot challenges. They are YOURS to solve — the
+    # plugin stops and hands over rather than working around one.
+    enabled: false
+    # The country site you actually browse. **The `<iso2>.indeed.com` pattern
+    # holds for 49 countries and lies for a few**: `my.indeed.com` is Indeed's
+    # profile login, not Malaysia (that is `malaysia.indeed.com`), and
+    # `us.indeed.com` does not exist — the United States is `www.indeed.com`.
+    # `ru.indeed.com` refuses every crawler. See `shared/boards/indeed.md`.
+    domain: "ch.indeed.com"
+    language: "fr"
+
+search:
+  # The sweep job-scan runs on each enabled board. /job-setup proposes these
+  # from your own profile; tune them freely. One entry = one search. Quoting a
+  # keyword makes most boards match it strictly, which cuts enormous noise.
+  queries:
+    - keywords: '"Laravel"'
+      location: "United Kingdom"
+    - keywords: 'Laravel OR Symfony'
+      location: "Bristol, England, United Kingdom"
+    - keywords: '"Senior Software Engineer"'
+      location: "Bristol, England, United Kingdom"
+    - keywords: 'PHP OR Laravel'
+      location: "United Kingdom"
+      remote_only: true
+  # How far back to look: week | month | quarter
+  posted_within: "month"
+  # Companies to always discard on sight — aggregators, reposting farms, and
+  # anyone you never want to see again. Matched case-insensitively on the
+  # company name. /job-setup seeds this with known aggregators.
+  blocklist: []
+
+thresholds:
+  # Minimum fit score (percent) worth applying to. Below it, the skill
+  # recommends against applying — you can still override at the gate.
+  # 55 is a deliberate, "apply broadly" setting; 70 is selective.
+  apply_from: 55
+
+compensation:
+  # At the go/no-go gate, cover-letter estimates what the role pays and where
+  # you would land in that range, given your fit and your record.
+  #
+  # It is always a RANGE with its source and its basis — the ad's own figure
+  # when there is one, the board's estimate when there is one, otherwise a
+  # reasoned estimate that says so. It never goes into your resume or letter,
+  # and it never fills a salary field on a form: that number stays yours.
+  estimate: true
+  # Currency to report in. Ads in another currency are reported in theirs, with
+  # an indicative conversion.
+  currency: "GBP"
+  # Optional. A figure below your floor is flagged once, plainly — it is not
+  # turned into a recommendation against applying, because circumstances decide
+  # that, not a number. Leave empty if you would rather not set one.
+  floor: null
+  target: null
+
+documents:
+  # Page budget for the resume. "strict" = one page, trim to fit.
+  # "generous" = up to 3 pages, never sacrifice content for pagination.
+  resume_length: "generous"
+  # Optional handwritten signature on the cover letter. Put the image at
+  # $JOB_HUNT_HOME/signature.png (see make-signature.sh) — if the file is
+  # absent, the letter simply leaves blank space to sign by hand.
+  signature_height_cm: 2.2
+
+modules:
+  # Optional country-specific add-ons. See shared/modules/ in the plugin.
+  #   none         — no unemployment-office paperwork
+  #   job-room-ch  — Switzerland: capture the fields the ORP "preuve de
+  #                  recherche d'emploi" (PRE) form on job-room.ch requires
+  unemployment_declaration: "none"

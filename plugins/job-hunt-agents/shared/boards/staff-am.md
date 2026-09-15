@@ -1,0 +1,130 @@
+# Board adapter — Staff.am (Armenia): reopened by the 2026-09-07 doctrine, the transport refuses the client with a static 403, and a browser is served
+
+<!-- verified: 2026-09-13 -->
+
+<!-- hosts: staff.am, www.staff.am -->
+<!-- script: none -->
+<!-- countries: AM -->
+<!-- content: measured · **1 305 distinct advertisement addresses** in the sitemap its rules declare (`/assets/staff-am-sitemap.xml`, 7 children: files 6 and 7 carry the `/jobs/<category>/<slug>` entries, 341 + 964, `<lastmod>` on them), read from a connected browser tab at 10:34 UTC; the site states no count on any open path — its listing is drawn from `api.staff.am/en/v4/jobs`, which answers 401 to a call without the app's own token · 2026-09-13 -->
+<!-- witness: none the site states on an open path — the list endpoint that would carry a total is behind the app's credential (401 «Your request was made with invalid credentials»), and the adapter does not present under it; the sitemap's own `<lastmod>` distribution bounds the live set without stating it · 2026-09-13 -->
+<!-- route: browser · 1305 · 2026-09-13 -->
+
+**Measured 2026-09-12 at 11:00:28Z UTC for #233, lot 3 — a measurement of the
+transport, not a decision about the host.** Every fetch under the declared
+identity, the guard on the exact path first, by `bin/fetch-body.py
+--allow-refusal` — the four records carry the status, the bytes, the md5 and
+the `cf-ray` that answered.
+
+## The rules — reopened by the doctrine of 2026-09-07 and by #230
+
+```
+robots.txt      read twice, certain: True, 2061 B, md5 f2937c60a828 both times — `User-agent: ClaudeBot / Disallow: /`, `*` open
+identity("/")   http, claude-user      <- the group naming ClaudeBot does not bind Claude-User (owner, 2026-09-07)
+verdict()       sweep True, sweep_token claude-user   <- since #230 (2026-09-11)
+allowed("/")    True
+```
+
+*The file is Cloudflare's managed content block — the `Content-Signal` preamble and nine named crawlers refused, `ClaudeBot` among them — followed by the operator's own lines: `PetalBot` and `SemrushBot` refused, and for `*` `Allow: /`, `Disallow: /*?` with `Allow: /*?page=`, `/compass/survey/` and `/cdn-cgi/` closed, `Sitemap: https://staff.am/assets/staff-am-sitemap.xml` (2 061 B in all). `/jobs` carries no query string and is permitted.* Before the decision this host was read as closed by name; the decision reopened it on paper, and this card is the first time its transport was asked under the permitted token.
+
+## The transport — a static 403, the provider default
+
+```
+GET https://staff.am/          403, 25 B, md5 9ccabba20b9f    (11:00:28Z)
+GET https://staff.am/          403, 25 B, md5 9ccabba20b9f    (second fetch)
+GET https://staff.am/jobs     403, 25 B, md5 9ccabba20b9f    (11:02:02Z)
+GET https://staff.am/jobs     403, 25 B, md5 9ccabba20b9f    (second fetch)
+```
+
+**Same size, same md5 on four fetches, root and listing alike — a static
+body, and it is the 25-byte default served by the same provider on unrelated
+hosts** (`www.jobstore.com`, `www.hays.fr`, `kariera.mk`, `www.tala-com.com`,
+`sptojobslink.com`, and the five of lot 1: the same bytes,
+`9ccabba20b9f4ec7d18bd6644579e5bf`). *A body shared between unrelated
+hosts is a provider default, not a page anyone wrote for this host.* **The
+rules permit and the transport refuses the client: family (1) of #222 — the
+case where a browser is legitimate** (#66: it changes the layer, not the
+permission). Not measured here: this session has no browser instrument; an
+OPEN under a real browser would make this host a candidate for a browser
+adapter, and that is the pilot's to assign.
+
+## 2026-09-12 14:34 UTC — the browser is served; the data host is `api.staff.am`; the count was not reached (#222)
+
+**One Claude-in-Chrome tab, three and a half hours after the 403s above.**
+The guard first: `staff.am` `/jobs` open (`*`, certain); **`api.staff.am`
+read, `Allow: /` over `Disallow: /`, `allowed True, certain True`** on
+`/en/v4/jobs` and `/en/v4/jobs/hot`.
+
+```
+navigate https://staff.am/jobs           200 «Find Jobs, Career Opportunities in Armenia|Jobs & Vacancies» — no challenge, no interstitial
+the page's own calls                     api.staff.am/en/v4/inputs?type=categories,cities,tags · /en/v4/jobs/hot · /en/v4/feed/story · /en/v4/banners
+                                         -> the listing is client-rendered from api.staff.am; the page body carries 10 /en/jobs/<category>/<slug> links and no count
+/assets/staff-am-sitemap.xml             200, 1 024 B — an index of 7 children (staff-am-sitemap1 … 7.xml, each with <lastmod>); none read
+```
+
+**Borne 0 held**: the 25-byte 403 goes to the declared HTTP client and to
+nobody else. **What was not reached: the list route and its count** — the
+extension disconnected before `api.staff.am/en/v4/jobs?page=1` could be read
+from the tab, and the card stops where the measurement stopped. *Neither a
+`route:` line nor a count is declared: the route is a tab plus one API host
+whose listing endpoint is named by the page's own calls, and the next read
+starts there.* Nothing was applied to.
+
+## 2026-09-13 10:33 UTC — the route completed from the point the 12th stopped at (#222)
+
+**The extension answered again; the tab was still on `/jobs`.** The list
+endpoint the page's own calls named:
+
+```
+fetch https://api.staff.am/en/v4/jobs?page=1     401 {"name":"Unauthorized","message":"Your request was made with invalid credentials.","code":0,"status":401}
+fetch https://api.staff.am/en/v4/jobs/hot        401 — the same, on the call the page itself made a minute earlier and was served
+```
+
+**The API is open in the rules and closed by a credential**: the page's
+bundle sends a token of its own on every call, and a call without it is
+refused. *That token is the app's, not the user's, and this adapter does
+not present under it — the same line as the 04.09 decision on API hosts
+(#100): a token is a technical gate, and the doctrine's answer is «not by
+this door», not «borrow the door».*
+
+**The door the rules leave open is the sitemap**, declared by the rules
+file and read from the tab:
+
+```
+/assets/staff-am-sitemap.xml            index of 7 children, each with <lastmod>
+staff-am-sitemap1 … 5.xml               1 000 <loc> each — /company/<slug> pages, no advertisement
+staff-am-sitemap6.xml                   1 000 <loc> — 341 /jobs/<category>/<slug>, 345 <lastmod>
+staff-am-sitemap7.xml                     982 <loc> — 964 /jobs/<category>/<slug>, 982 <lastmod>
+                                        **1 305 distinct advertisement addresses**          10:34:18 UTC
+GET /jobs/hardware-design/hardware-design-engineer-15     200, 107 822 B — one JobPosting in JSON-LD
+   title «Hardware Design engineer» · hiringOrganization Nairi-Tech LLC · validThrough 2026-09-30 · description 667 chars
+   jobLocation.address {streetAddress «Armen Tigranyan 28», …} · <title> «Nairi-Tech LLC | Hardware Design engineer (EN-ENj163542)»
+```
+
+**The site states no count on an open path** — the number the listing
+shows is drawn from the 401 endpoint — so the file's 1 305 stands alone
+and the card says so; the page's `<title>` carries a reference
+(`EN-ENj163542`) beside the slug's trailing number (`-15`), and which of
+the two is the stable id is the first keyed reading's question.
+
+**The procedure a session follows — this is the adapter, at the same title
+as a script (decision of 2026-09-08):**
+
+1. guard `staff.am` on `/assets/staff-am-sitemap.xml` and its children;
+2. `navigate https://staff.am/jobs` in the session's own tab (the 25-byte
+   403 is for the declared HTTP client; the tab is served);
+3. from the tab, `fetch` the index and every child; keep the
+   `/jobs/<category>/<slug>` entries with their `<lastmod>`; print
+   **«n addresses in the declared sitemap — the site states no count on
+   an open path; the list API answers 401 without the app's token»**;
+4. one advertisement page for its JobPosting;
+5. close the tab.
+
+## What this card is, and is not
+
+- **Not a verdict that the host is closed** — the owner's decision, on his
+  express validation (rule of 2026-09-08). Recorded: one client, one day, two
+  fetches each of the root and a listing path, a static refusal.
+- **No script, no configuration.** A user with a URL from this host can hand
+  it to `cover-letter`; whether that page is served to a browser is not
+  established here.
+- **Not an AfricaWork host** (#233 lists it under «another managed block naming ClaudeBot»): its rules file has the operator's own lines under the managed block, and its refusal is the same 25-byte provider default as the franchise hosts — **the body says who fronts the site, not who runs it.**

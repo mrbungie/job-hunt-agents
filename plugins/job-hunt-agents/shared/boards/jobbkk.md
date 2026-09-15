@@ -1,0 +1,302 @@
+# Board adapter — JOBBKK (Thailand)
+
+<!-- verified: 2026-09-11 -->
+
+<!-- hosts: www.jobbkk.com -->
+<!-- script: jobbkk.py -->
+<!-- countries: TH -->
+<!-- content: measured · the page's own `jobListReducer` store declares `total` per query — 3 399 for `--keyword engineer`, **34 546 for the empty keyword** (the search does NOT require one; the adapter serves 25 a page and stops at the repeat, 200 over 9 pages for `engineer`) · 2026-09-11 12:57 UTC -->
+<!-- witness: second source on the same quantity — the board's `total` in its store, printed beside every count («25 emitted … board states 3399 — 3374 short»); 0 for a keyword that matches nothing, and the page then carries 25 `jobpost_list_suggest` cards that are not results · 2026-09-11 -->
+Thailand's largest board by volume, and **the first Thai adapter here**. Plain
+HTML, **no key, no cookie, no account, no browser**.
+
+`robots.txt` is **275 bytes of `text/plain`** — checked as a MIME type, and
+byte-identical on the apex and on `www`. It closes résumés, uploads, mail,
+captchas, a demo tree and **`/jobs/apply/`**; it says nothing about the
+listings and **names no AI agent**, for or against.
+
+**Everything below was verified against the live site on 2026-09-02.**
+
+## 2026-09-11 — the board pads a zero with suggestions, and the adapter emitted them (#219)
+
+**`search --keyword zzzqqqxxx` returned 29 advertisements. So did `engineer`, so
+did the empty keyword.** Found while running the adapter for #181; the
+memory's form is *a filter that fails toward everything looks exactly like a
+success* — and here the filter had worked. The page's own store, in the
+flight payload, reads:
+
+```
+"jobpost_list":[…25…],"jobpost_list_suggest":[],"total":3399,…     engineer
+"jobpost_list":[],"jobpost_list_suggest":[…25…],"total":0,…        zzzqqqxxx
+"jobpost_list":[…25…],"jobpost_list_suggest":[],"total":34546,…    (empty keyword)
+```
+
+**The board answers a keyword that matches nothing with `total: 0` and 25
+recommendations in a second list** (`hilight_section.source: random_recommend`
+sits beside it). `records()` matched every `"jobpost_id"` on the page and read
+both lists as one. *The two pages carry 25 ids each and 0 in common — the filter
+reduces; the padding is what was emitted.*
+
+**What changed.** `store()` splits the payload at its own three markers and
+returns `(results, suggestions, total)`; only `jobpost_list` is emitted; the
+board's `total` is printed beside the count on every run — `25 emitted over 1
+page(s) read, board states 3399 — 3374 short`. A stated 0 with an empty list is
+**a real zero, anchored on the board's count**: nothing emitted, the suggestion
+cards named, exit 0. A stated N > 0 with an empty list is **a reading fault**,
+exit 6 with the size. `ABoardThatPadsAZeroWithSuggestionsIsReadOnItsOwnList`
+pins the split, the anchor, the real zero and the fault.
+
+**Two things this corrects above.** The header said the search *requires a
+keyword* and that *no board total is reachable* — the empty keyword answers,
+with `total: 34 546`, and every query carries its total. And *the adapter prints
+no report at all* — it prints the anchor now. **The 1 045 of 2026-09-08 is not
+re-measured here**: today's `engineer` serves 200 over 9 pages against a stated
+3 399, and which of the two the board's pagination allows on a given day is a
+measurement, not a property.
+
+**On the population question** — *can «an absurd keyword returns less than an
+empty one» be a guard over every keyword adapter?* Not as a fixture test: it
+needs the board's behaviour, and this board shows why — the absurd keyword
+returns the SAME number of cards as a real one (25, the page size) and differs
+only in the store's `total` and in which list holds them. *The reduction is
+visible in a figure the board declares, not in the count of cards.* What
+generalises is the discipline, not the guard: **every keyword adapter prints a
+second figure from outside its own extraction**, and #181's re-pass is the
+census of that.
+
+## The listing is the payload
+
+The site is a Next.js application, and its flight data carries **the complete
+record for each of the 25 cards on a result page** — not a title and a link:
+
+```
+jobpost_id, company_id, company_name, position, detail (the duties text),
+province_name, district_name, location, gmap_la, gmap_lo,
+salary_start, salary_end, salary_not_show, job_format_type, employment_type,
+occupation_sub_name, business_name, created_at, updated_at, date_up,
+is_new_graduated, is_disability, is_online
+```
+
+So **one request buys 25 ads**, and a sweep costs one request per 25 rather
+than one per ad. The ad page is worth reading only for a fuller address; the
+duties text is already on the card.
+
+```
+GET /jobs/lists/<page>/หางาน,<keyword>,<province>,<category>.html
+    → 200 text/html, ~1.2 MB, 25 cards
+GET /jobs/detail/<company_id>/<jobpost_id>
+    → 200 text/html, with an application/ld+json JobPosting
+```
+
+The path is Thai and positional: `หางาน` ("find work"), then the keyword, the
+province — `ทุกจังหวัด` for all — and the category, `ทั้งหมด` for all.
+
+## Past the end, the board serves the last page for ever
+
+Measured on *โปรแกรมเมอร์* (programmer):
+
+| Page | Result |
+| --: | :-- |
+| 4 | 25 cards, distinct |
+| **5** | 25 cards, distinct — **the last real page** |
+| 200 | **the same 25 cards as page 5** |
+| 500 | the same 25 |
+| 5 000 | the same 25 |
+
+**No 404, no empty list, no error, no change of status.** A sweep that pages
+until it gets nothing back never stops, and every page past the wall adds 25
+duplicates it has already recorded. Verified by comparing id lists: pages 200,
+500 and 5 000 overlap each other 25 of 25.
+
+**The wall is per search, not global.** *บัญชี* (accounting) and the
+unfiltered listing were still returning distinct pages at page 20. So the
+depth is the size of that result set — 5 pages and 133 ads for *programmer* on
+the day — and the adapter cannot hard-code it.
+
+`jobbkk.py` therefore **stops when a page repeats the previous page exactly**.
+That is the only end-of-results signal this board gives.
+
+## And the page says "no results" while showing results
+
+The Thai string *ขออภัยไม่พบตำแหน่งงานที่คุณค้นหา* — "sorry, we did not find
+the position you searched for" — is in the served HTML of a page carrying 25
+ads, inside a hidden template. **Never decide emptiness by searching for it.**
+Count the cards.
+
+## The date that is not the posting date
+
+`created_at` and `updated_at` are both on every card, and they are years
+apart. Over 133 ads from one search:
+
+| | Years seen |
+| :-- | :-- |
+| `created_at` | **2010, 2012, 2013, 2016, 2018–2026** — only 42 of 133 in 2026 |
+| `updated_at` | **2026 on 133 of 133** |
+
+An ad created in 2010 was refreshed the day before it was read. The board
+displays the refresh — `date_up`, and a label like *1 วันที่แล้ว* ("1 day
+ago") — and a scorer that reads `created_at` as the posting date **ages a live
+ad by up to sixteen years** and drops it as stale.
+
+The card carries both, named for what they are: **`created`** and
+**`refreshed`**. Read `refreshed`.
+
+**The ad page agrees with `refreshed`, not with `created`.** On
+`40904/844353` the JSON-LD `datePosted` is `2026-09-01` while the card's
+`created` is `2022-11-17` — so the two surfaces are consistent once you know
+which date each is showing, and `datePosted` on the ad page is the refresh.
+
+## Salary — well filled, and one figure that must not be republished
+
+**79 of 133 ads (59%) carried a stated range**, which is high for this
+repository: Kalibrr manages 20%, IrishJobs 27%, the four StepStone sites zero.
+`salary_start`/`salary_end` are `0` when nothing was stated — a zero, not a
+null.
+
+**But `salary_not_show` is the employer asking for the figure to be hidden,
+and the payload sends it anyway.** Of 133 ads, 18 carried `"1"` — and **17 of
+those 18 also carried an amount**. The site does not display them.
+
+**This adapter does not emit them either.** When the flag is set the card
+carries `salary_withheld: true` and no figure. Reading a field the operator
+serves is fair; passing on one the operator was asked to hide is not, and the
+difference costs nothing here — 17 rows out of 133.
+
+*(The remaining values are `"0"` on 88 and empty on 27. The flag is not a
+disclosure indicator and must not be read as one; it is only a suppression
+request.)*
+
+## The ad page
+
+Twelve ads read, twelve `application/ld+json` `JobPosting` blocks:
+
+| Field | Filled |
+| :-- | --: |
+| `title`, `hiringOrganization.name` | 12/12 |
+| `jobLocation.address` — street, district, province, postcode | **12/12** |
+| `datePosted` | 12/12 |
+| `validThrough` | 12/12 |
+| `employmentType` | 12/12, **`FULL_TIME` on all twelve** |
+| `identifier` | 10/12 |
+| `baseSalary` | **0/12** — absent, not empty |
+
+Two cautions. **`validThrough` is a listing expiry, not an application
+deadline**: the dates ran from 2026-12 to **2027-09**, up to a year out. And **the `description` is the duties block only** — 24 to 942 characters,
+median 325 — while the rendered page for the same ad ran about 5 600
+characters and also carried working hours, level, qualifications and benefits.
+The structured description is a section, not the ad.
+
+`employmentType: FULL_TIME` on 12 of 12 is a uniform value and should be
+treated as a default until it is seen to vary; the card's own
+`job_format_type` (*งานประจำ*, permanent) carries the board's own wording.
+
+## The ad id and its URL
+
+The id is the pair the URL is built from:
+
+```
+https://www.jobbkk.com/jobs/detail/<company_id>/<jobpost_id>
+```
+
+In the ledger: `jobbkk:<company_id>/<jobpost_id>`. Both halves are needed —
+the job id alone does not resolve.
+
+## Configuration
+
+```yaml
+boards:
+  jobbkk:
+    enabled: true
+    searches:
+      - keyword: "โปรแกรมเมอร์"      # Thai or English, as typed on the site
+        province: "กรุงเทพมหานคร"    # optional; default ทุกจังหวัด (all)
+    pages: 5
+    delay: 1.5
+```
+
+| Key | Required | Notes |
+| :-- | :-- | :-- |
+| `enabled` | yes | False or absent → not scanned |
+| `searches` | yes | `keyword` is required per entry; it goes in the path, not a query string |
+| `province` | no | Thai province name. Default `ทุกจังหวัด` — every province |
+| `category` | no | Thai category name. Default `ทั้งหมด` — every category |
+| `pages` | no | 25 ads a page; the sweep stops itself when a page repeats |
+| `delay` | no | Seconds between pages, default 1.5. The pages are 1.2 MB each |
+
+No credentials, no login, no browser.
+
+## Zero-shaped answers
+
+**1. The last page, repeated for ever.** Page 5 000 answers 200 with page 5's
+ads. The only end signal is repetition.
+
+**2. A "no position found" message inside a page of results.** A hidden
+template, present in every page's HTML.
+
+**3. `created_at` from 2010 on a live ad.** The board refreshes; the creation
+date is not the age.
+
+**4. `salary_start: 0` is "not stated", not "free".**
+
+**5. A salary present under a suppression flag.** Withheld here by choice.
+
+**6. `baseSalary` absent from the JSON-LD on 12 of 12** while 59% of cards
+carry a range — the structured block is the poorer source, which is the
+opposite of the usual arrangement and worth remembering.
+
+## Applying
+
+**`robots.txt` closes `/jobs/apply/`.** The plugin does not drive an
+application on this board and does not fill any field there. Hand the user the
+ad URL and their documents; applying is theirs, in their own browser.
+
+## Pace
+
+No published limit and no `429` seen over roughly 60 requests at 1.2–1.5 s
+apart. The pages are 1.2 MB, so a sweep is heavy in bytes rather than in
+requests — one page per 25 ads is already frugal. Keep `delay` at 1.5 s and
+prefer a narrower search over a deeper one; the wall arrives on its own.
+
+## Verification
+
+```bash
+S=skills/job-scan/scripts/jobbkk.py
+python3 $S search --keyword "โปรแกรมเมอร์" --limit 3
+python3 $S search --keyword "โปรแกรมเมอร์" --pages 8   # stops itself at the repeat
+python3 $S ad --id 40904/844353
+```
+
+## The links were renamed, and the adapter reported an empty market — 2026-09-08
+
+**`search` returned zero on four keywords in two languages** — `โปรแกรมเมอร์`,
+`พนักงาน`, `programmer`, `sales` — **while the board served 1.24 MB of
+results.** Every advertisement link had become `/jobs/detailurgent/`; the
+extractor matched only `/jobs/detail/`.
+
+```
+result page, 2026-09-08     25 links, all /jobs/detailurgent/, 0 of any other form
+page 2                      25 more, 0 shared with page 1
+/jobs/detail/162598/785832        HTTP 200
+/jobs/detailurgent/162598/785832  HTTP 200, identical <title>
+```
+
+> **The adapter printed «&nbsp;page 1 carried no result card — stopping&nbsp;»,
+> which is the line it prints for a search that legitimately matches nothing.**
+> *A rename and an empty market are the same output here — and the invocation
+> that stopped working is the one this card documents.*
+
+**Both forms serve the same advertisement**, so only the extraction was
+widened; `AD` is unchanged. **The two forms are named rather than matched by
+`detail\w*`** — a third form must stop this adapter, not be swallowed —
+and `tests/test_core.py::TheBoardRenamedItsAdvertisementLinks` asserts it,
+reddening on each of three mutations: dropping `(?:urgent)?`, widening to
+`detail\w*`, and loosening `\d+` to `\w+`.
+
+**Re-exercised after the fix**: `--keyword โปรแกรมเมอร์ --pages 8` reads 6 pages
+and stops itself at the repeat, 130 advertisements.
+
+**Two measurements this card does not explain**, recorded rather than
+diagnosed: **18 of those 130 titles contain the keyword** — this board matches
+broadly — and **16 of 130 carry no `occupation`, `industry` or `job_format`.**
+*Whether those are sparse on the board or missed by the card parser was not
+established here.*

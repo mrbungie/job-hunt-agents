@@ -1,0 +1,427 @@
+# Board adapter — Kalibrr (Indonesia and the Philippines)
+
+<!-- verified: 2026-09-08 -->
+
+<!-- hosts: www.kalibrr.com -->
+<!-- script: kalibrr.py -->
+<!-- countries: ID PH -->
+South-East Asia's private board, and **one adapter for two countries**:
+**1 116 Indonesian and 777 Philippine ads, measured 2026-09-08 09:39:32 UTC**.
+Public JSON, **no key, no cookie, no account, no browser** — *but see the access
+note below: our declared client is now refused by a live antibot control, and
+these figures were read through the user's browser.*
+
+`www.kalibrr.com/robots.txt` is **59 bytes of `text/plain`** — checked as a
+MIME type, not only as a status — and closes exactly two paths, `/root` and
+`/candidate/profile`. No job path is refused and **no AI agent is named**,
+neither to allow nor to ban.
+
+**Everything below was verified against the live service on 2026-09-02.**
+
+## The finding that decides how this adapter works
+
+**A search that matches nothing is answered with somebody else's ads, and the
+only sign is one boolean.**
+
+| Call | `count` | `from_alternative` |
+| :-- | --: | :-- |
+| `?country=Indonesia` | 1 116 | `false` |
+| `?country=Philippines` | 777 | `false` |
+| `?country=Singapore` | **818** | **`true`** |
+| `?text=zzzzqqqq` | **818** | **`true`** |
+| no country at all | **818** | `false` |
+
+Kalibrr does not operate in Singapore, and no ad matches `zzzzqqqq`. Both
+return **the same 818 ads, headed by the same employer**, with a complete
+payload, HTTP 200 and no error field. A client that scores what it is handed
+scores 818 unrelated ads as Singaporean vacancies.
+
+And read the last row again: **the unfiltered call returns that same 818, and
+818 is smaller than either country on its own.** The default is not the
+board — it is the fallback set. This is the anomaly that made the board worth
+investigating: a sweep with no country reads a curated remainder, gets a
+plausible number, and concludes the board is small.
+
+So `kalibrr.py` **requires `--country`**, and **refuses any response carrying
+`from_alternative`** — it exits 3 with the substituted count rather than
+scoring a single row of it. `from_correction` and `correction_text_search`
+get a warning by the same logic: the results answer a term the board chose.
+
+## Counts corrected 2026-09-08 — and nothing here was ever false
+
+| | 2026-09-02 | **2026-09-08 09:39:32 UTC** | move |
+| :-- | --: | --: | --: |
+| Indonesia `/kjs` | 1 045 | **1 116** | +71 |
+| Indonesia `/api` | 1 011 | **1 080** | +69 |
+| Philippines `/kjs` | 778 | **777** | −1 |
+| Philippines `/api` | 674 | **670** | −4 |
+
+**The Indonesian inventory grew by about seventy over six days; the Philippine
+one did not move.** *Both endpoints moved by the same amount for Indonesia and by
+none for the Philippines — **two independently built readers agreeing on a
+change means the change is in the board, not in the reading**.*
+
+**And the `/kjs` − `/api` offset is stable per country** — 34 → 36 for Indonesia,
+104 → 107 for the Philippines. *The disagreement between the endpoints is
+structural, and it does not drift.*
+
+> **`verified:` attests that the ROUTE was exercised. It does not attest that
+> every number in the card was re-measured.**
+
+*A card carries one `verified:` date over figures of several ages. This one said
+`2026-09-08` above counts dated `2026-09-02` **in its own prose** — nothing was
+false, and the single date still invited reading all of it as current.* **The
+worked pagination example below is from 2026-09-02 and is kept as written: it
+illustrates a mechanism, not a stock.**
+
+## Two endpoints, and they do not agree
+
+| | `/kjs/job_board/search` | `/api/job_board/search` |
+| :-- | --: | --: |
+| no country | 818 (the fallback) | **1 830** |
+| Indonesia | **1 116** | 1 080 |
+| Philippines | **777** | 670 |
+| `country=Singapore` | 818, `from_alternative` | **0 — an honest zero** |
+| `text=zzzzqqqq` | 818, `from_alternative` | **0** |
+| fields per ad | **38** | 37 |
+
+`/api` is the older one: it tells the truth about emptiness and carries
+`converted_salary` and `salary_currency_orig`, but it is less complete and it
+lacks `is_hybrid`, `is_open_to_fresh_grads` and `job_sds_skills`. `/kjs` is
+what the site calls today: fuller, richer, and the one that substitutes.
+
+The adapter builds on `/kjs` **with the `from_alternative` guard**, and this
+file records `/api` as the second opinion to reach for when a count looks
+wrong — or when you need the currency `/kjs` drops.
+
+## The salary is converted to pesos and the label does not say so
+
+Every salaried ad on `/kjs` carries `salary_currency: "PHP"`. Including the
+Indonesian ones:
+
+```
+Indonesia, /kjs   PHP 22962.742977478316 – 32803.91853925474  month
+                  "Senior Corporate Finance Accounting & Tax"
+Indonesia, /api   salary_currency "PHP", salary_currency_orig "IDR",
+                  converted_salary true, base 12718.172940574614
+Philippines,/kjs  PHP 17000 – 18000 month
+```
+
+The Philippine amounts are round numbers an employer typed. The Indonesian
+ones are twelve-decimal floats, which is what a conversion looks like, and
+`/api` names it outright: **the original currency is IDR and the figure has
+been converted**. `/kjs` drops both fields.
+
+Read an Indonesian `base_salary` as pesos and you are wrong by a factor of
+roughly 250. **So this adapter never emits `salary_min`.** It emits
+`salary_php_min`, `salary_php_max` and `salary_converted`, and
+`shared/scoring-rubric.md` cannot mistake one for the other. If a real local
+figure is needed, `/api` is where the original currency lives.
+
+## The salary flag is not the salary
+
+| | Indonesia | Philippines |
+| :-- | --: | --: |
+| Ads read | 999 | 778 (the whole board) |
+| **Carrying a figure** | **217 (21.7%)** | **130 (16.7%)** |
+| `salary_shown: true` | 880 (88.1%) | 680 (87.4%) |
+| **`salary_shown: true` and no figure** | **663** | **550** |
+
+`salary_shown` is true on nearly nine ads in ten, and four out of five of
+those carry no salary at all. It is not a disclosure flag, whatever it is —
+and a parser that trusts it reads 88% coverage on a board that discloses 20%.
+The card carries it as `salary_shown_flag`, named so nobody uses it by
+accident.
+
+This is `irishjobs`' `€ Not Disclosed` in another costume: a field that is
+filled, and a field that is meaningful, are not the same field.
+
+## What a record gives
+
+1 139 unique ads across both countries:
+
+| Field | Filled |
+| :-- | --: |
+| Company name | **1 139/1 139** — no anonymous ads on this board |
+| Description | 1 139/1 139 |
+| `activation_date` | 1 139/1 139 |
+| **`application_end_date`** — a real closing date | **1 139/1 139** |
+| Structured location (city, region, country) | 1 139/1 139 |
+| `is_open_to_fresh_grads` | 199/1 139 |
+| `job_sds_skills` | 168/1 139 |
+| `is_work_from_home` | 89/1 139 — 31 in Indonesia, **104 of 778 in the Philippines** |
+| `apply_redirect_url` | 58/1 139 (~5%) — an external ATS |
+| A salary figure | 347/1 139 (~20%) |
+
+**The employer is named on every ad**, which is better than most of this
+repository, and the closing date is real rather than a repost of the posting
+date. Remote work is a Philippine phenomenon here, not an Indonesian one:
+13% against 3%.
+
+## Pagination, and how it ends
+
+`limit=500` was accepted and returned 500 rows; no ceiling was found. 100 is
+what the adapter uses, because nothing needs 500 at once.
+
+The end of a result set is a **200 with an empty `jobs` list — and `count`
+drops from the country's total back to 818**, the fallback number:
+
+```
+offset=1000 → 20 rows, count 1045
+offset=1040 →  5 rows, count 1045
+offset=1100 →  0 rows, count  818
+offset=5000 →  0 rows, count  818
+```
+
+Neither is an error. The adapter stops on the empty list and says so when the
+count changed underneath it.
+
+## The ad URL is rebuilt from the company code and the id
+
+```
+https://www.kalibrr.com/c/first-datacorp-1/jobs/271911            → 200, 73 KB
+https://www.kalibrr.com/c/first-datacorp-1/jobs/271911/<slug>     → 200, same
+https://www.kalibrr.com/id/c/…                                    → 6 250 B, a shell
+```
+
+The slug is decorative; `company.code` and `id` are enough. The locale prefix
+`/id/` is not — it serves a 6 250-byte skeleton, so build the plain form.
+
+**There is no per-ad JSON endpoint**, and the ad page carries only a `WebSite`
+JSON-LD block, no `JobPosting`. The search payload *is* the ad: it includes
+the description, so no second request buys anything. `--with-description`
+puts the text on the card.
+
+## What the terms allow
+
+Kalibrr's terms (read 2026-09-02 at `kalibrr.com/terms`, server-rendered):
+
+> "You may download relevant materials from our website bearing sufficient
+> reference to its proprietary nature, and solely for your **personal and
+> non-commercial use**."
+
+> "You shall not reproduce, copy, distribute, upload, post, transmit, or
+> disseminate in any manner … any content, graphics, pictures, or materials
+> from our website or Application without written permission from Kalibrr and
+> the relevant owners."
+
+So a personal job hunt is inside the licence, including keeping what you
+found; **reproducing or disseminating the content is not**. No ad text, no
+description and no employer copy from this board goes into anything this
+project publishes.
+
+**A measured count is a narrower question, and this file does not settle it
+the way `adzuna.md` does.** Adzuna's terms name *aggregation* outright —
+"vacancy counts, average salaries etc." — and exclude it without written
+consent, which is why no Adzuna figure appears in a published page. Kalibrr's
+clause forbids reproducing and disseminating *content*; a number this project
+measured is neither the content nor an aggregation the clause names. The
+project therefore does publish Kalibrr volumes and fill rates, with that
+reasoning stated on the page carrying them so it can be argued with. The two
+boards differ because the two documents differ, not because the practice
+does.
+
+One honest note on scope: the word *scraping* appears **once** in the
+document, in the **Kalibrr Free** section, which governs employer accounts on
+that plan and reserves the right to monitor them for "automated extraction,
+scraping, fraudulent hiring activity … or excessive usage". It is not a
+prohibition addressed to visitors, and it does not name the API — but it is
+the operator saying what it thinks of bulk extraction, and it is a reason to
+keep the pace conservative rather than a reason to stop.
+
+## Configuration
+
+```yaml
+boards:
+  kalibrr:
+    enabled: true
+    countries: ["Indonesia", "Philippines"]   # required; those two only
+    searches:
+      - keyword: "software engineer"
+      - keyword: "accountant"
+    pages: 3            # 100 ads a page
+    delay: 1.0
+```
+
+| Key | Required | Notes |
+| :-- | :-- | :-- |
+| `enabled` | yes | False or absent → not scanned |
+| `countries` | **yes** | `Indonesia`, `Philippines`. **Anything else — including omitting it — reads the fallback set**, and any other value is answered with 818 substituted ads |
+| `searches` | no | Each `keyword` becomes `text=`; without one the sweep is the country's whole board |
+| `pages` | no | 100 ads a page |
+| `delay` | no | Seconds between calls, default 1.0 |
+
+No credentials, no login, no browser.
+
+## Zero-shaped answers
+
+**1. `from_alternative: true` — the answer is to a different question.** 818
+ads, HTTP 200, full payload. The single most important field in the response.
+
+**2. No country is not "all countries".** It is the same 818, and it is
+smaller than either market.
+
+**3. `salary_shown: true` with no salary**, on 1 213 ads of 1 777.
+
+**4. `salary_currency: "PHP"` on an Indonesian ad**, converted, with the
+original currency dropped by this endpoint.
+
+**5. Past the end is a 200, an empty list, and a `count` that changes** back
+to the fallback total.
+
+**6. The `/id/` locale prefix serves a 6 250-byte shell** with HTTP 200.
+
+**7. The two endpoints disagree by a few hundred ads** in the same minute.
+`/kjs` is the fuller one; the gap is not an error to reconcile but a reason to
+name which endpoint a number came from.
+
+## Applying
+
+`apply_redirect_url` is present on about 5% of ads and points at the
+employer's own ATS; the rest are applied to on Kalibrr, which requires an
+account. **The plugin does not create accounts and does not fill credential
+fields.** Hand the user the ad URL and their documents.
+
+## Verification
+
+```bash
+S=skills/job-scan/scripts/kalibrr.py
+python3 $S count  --country Indonesia                        # 1 116 au 08.09
+python3 $S count  --country Philippines --keyword "software engineer"
+python3 $S count  --country Indonesia --keyword zzzzqqqq     # refuses, exit 3
+python3 $S search --country Philippines --limit 2
+```
+
+## Refused at the transport — 2026-09-08
+
+**`count --country Indonesia` exits 9.** The host answers **HTTP 403** to this
+client while its rules permit the path, so this is the shape the 2026-09-07
+decision opens to a browser — *the host says it opens, and the firewall is not
+contradicting it, it does not know who we are.*
+
+**What settles it is borne 0: is the 403 served to this client or to
+everyone?** **This session could not check — the browser pass is refused by its
+own permission settings**, and that refusal is surfaced rather than handed to
+another session. *Nothing here says the board is closed.*
+
+## Bound 0 answered — 2026-09-08, from a session that could open it
+
+**The 403 is served to this client, not to everyone.** *Checked by a second
+session because the first one's browser permissions refused the domain — a
+refusal in one session is not a fact about a host, which is why the sentence
+above was worth writing rather than resolving.*
+
+```
+adapter, our declared client   /kjs/job_board/search?...&country=Indonesia   403
+same endpoint, from the page   /kjs/job_board/search?...&country=Indonesia   200
+browser on /job-board/te/1     the board renders — employer, city, salary,
+                               contract type, recency, deadline. NO challenge.
+```
+
+**No captcha, no interstitial, nothing to defeat**, so the owner's second bound
+is not engaged.
+
+### The site states its own counts, and the pager closes on them
+
+```
+country=Indonesia     count 1115        country=Philippines   count 775
+offset    0 -> 100 jobs
+offset  500 -> 100 jobs
+offset 1100 ->  15 jobs      1100 + 15 = 1115
+215 ids returned across the three pages, 215 distinct
+```
+
+**`count` is the API's own field**, so it is the figure that does not come from
+reading our own output — *if the extraction broke, `count` would still say
+1 115 and the difference between "empty board" and "I read nothing" would stay
+visible.* **1 890 advertisements across the two declared countries**, and the
+id check rules out overlap on the three pages where it was done, not on all
+twelve.
+
+**38 fields per advertisement** — `name`, `company_name`, `function`,
+`activation_date`, `application_end_date`, `education_level`,
+`number_of_openings`, `is_work_from_home`, `is_hybrid`, `base_salary`,
+`maximum_salary`, `google_location`, `description` and more. *Real fields, not
+prose.*
+
+### What is not claimed
+
+**The adapter still fails**, and this card does not say otherwise: `kalibrr.py`
+speaks to the endpoint as our declared client and is refused. *What is
+established is that the route exists through the browser `job-scan` already
+drives, and what the route would return.*
+
+**And the exit code is quoted from the section above, not re-observed here.**
+*My own run printed the refusal message; the shell captured the status of a
+pipe rather than the interpreter's, so I did not verify `9`.*
+
+
+## The browser route, exercised — 2026-09-08 09:57 UTC (#194)
+
+**The rules open and a live antirobot control closes.** *Our declared client
+gets 403 with a moving fingerprint at constant size — a per-request token, not
+a static refusal.* **A browser loading the board page gets the token because it
+IS a browser, and no challenge is presented: we do not solve the control, we do
+not meet it.**
+
+**This is not DOM scraping.** *The endpoint returns JSON; only the page's
+CONTEXT is needed.* The route is: drive the browser to `/job-board/te/1`, then
+call `/kjs/job_board/search` from that page.
+
+```
+guard, taken first and separately
+  /  ·  /job-board/te/1  ·  /kjs/job_board/search  ·  /api/job_board/search
+  all: read · allowed=True · certain=True · group *
+
+counts read from the page context, 2026-09-08T09:57:22Z
+  Indonesia    count 1116   from_alternative false   38 fields per ad
+  Philippines  count  778   from_alternative false
+```
+
+**The 1 116 confirms this card's own 2026-09-08 column by an independent
+read**, six days after the 1 045 of 2026-09-02. *And the Philippines came back
+to 778 after reading 777 at 09:39 — a ±1 drift over eighteen minutes, which is
+what a live board looks like and what a single reading cannot tell you.*
+
+### The pagination closes exactly on the declared count
+
+```
+offset=1100 country=Indonesia   16 rows   count 1116      1100 + 16 = 1116
+offset=1120                      0 rows   count  819      <- the fallback
+offset=5000                      0 rows   count  819
+no country at all               20 rows   count  819
+```
+
+> **Overrunning the offset returns the fallback list, and
+> `from_alternative` is `false` on it** — exactly as the unfiltered call
+> already documented in `kalibrr.py`. *The flag does not mark this case either.*
+> **The discriminant is the count collapsing to ~819, not the flag**, and that
+> is why `--country` is required and why an offset past the end must be treated
+> as the end rather than as a page.
+
+*The fallback reads 819 today against the 818 recorded on 2026-09-02 — the
+substituted list moves too.*
+
+### The converted salary, measured rather than recalled
+
+```
+50 Indonesian ads read · 14 carry a salary
+14 of 14:  salary_currency "PHP"  ·  salary_currency_orig "IDR"
+           converted_salary true  ·  salary_interval "month"
+```
+
+**Both flags are present on `/kjs`.** *`kalibrr.py`'s docstring said this
+endpoint drops them and only `/api` keeps them; that is corrected there with
+its date.* **The adapter's conduct was right for another reason and stays
+right**: it emits `salary_php_*` and never `salary_min`.
+
+### What this route is, and what it is not
+
+**No script ships for it.** *This repository has no adapter that drives a
+browser — `indeed.md`, `cadremploi.md` and `softy.md` are cards without a
+`script:` for the same reason: the browser tools belong to the Claude session,
+not to the plugin a user installs.* **So the deliverable is this section: a
+route exercised once, with its guard, its counts and its traps, precise enough
+to be followed by a session that has a browser.**
+
+`kalibrr.py` is unchanged in what it does — the HTTP route, which exits 9.

@@ -1,0 +1,24 @@
+{
+  "name": "job-hunt-agents",
+  "version": "1.0.0",
+  "description": "Evidence-based job-search workflows with a local pipeline ledger.",
+  "author": {
+    "name": "mrbungie",
+    "url": "https://github.com/mrbungie"
+  },
+  "homepage": "https://github.com/mrbungie/job-hunt-agents",
+  "repository": "https://github.com/mrbungie/job-hunt-agents",
+  "license": "MIT",
+  "keywords": ["job-search", "resume", "cover-letter", "career"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Job Hunt Agents",
+    "shortDescription": "Evidence-based job-search workflows",
+    "longDescription": "Find jobs, assess fit, draft truthful application materials and maintain a local ledger.",
+    "developerName": "mrbungie",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Write"],
+    "websiteURL": "https://github.com/mrbungie/job-hunt-agents",
+    "defaultPrompt": ["Find jobs that fit my profile.", "Draft a resume for this job URL."]
+  }
+}

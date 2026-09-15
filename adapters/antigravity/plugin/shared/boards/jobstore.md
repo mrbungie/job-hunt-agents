@@ -1,0 +1,226 @@
+# Board adapter — Jobstore
+
+<!-- verified: 2026-09-11 -->
+
+<!-- hosts: www.jobstore.com -->
+<!-- script: jobstore.py -->
+<!-- countries: * -->
+<!-- content: measured · 52 128 advertisements on the Swiss site, from the six `job-*.xml` children; the aggregator runs 26 country sites and only Switzerland was counted · 2026-09-02 -->
+<!-- witness: none possible — no site-served total exists for the Swiss site, and the one number the index offers is the sum of all twelve children, **250 000+, five times the truth**: a decoy rather than a witness. **And the 52 128 is refused to this project's HTTP client, not unreadable**: `www.jobstore.com` answers HTTP 403 to a scripted request, 25 bytes, md5 `9ccabba20b9f`, fetched TWICE on 2026-09-07 with a stable fingerprint — the rules permit, the transport refuses the client, **and a real browser is served** (measured 2026-09-08 from two sessions, not re-measured here); the host redirects to `/ch` by the visitor's IP, so the 52 128 is the Swiss edition a Swiss visitor lands on · 2026-09-02, refusal 2026-09-07, browser 2026-09-08, scope corrected 2026-09-11 -->
+<!-- overlap: hiringcafe.md · 25 % measured from JOBSTORE's side; the source states no unit for this ratio and no raw count, and is refused to this project's HTTP client while a browser is served (2026-09-08), so it is not re-readable by script · 2026-09-03 -->
+<!-- overlap: jobup.md · 15.5 % measured from JOBSTORE's side; the source states no unit for this ratio and no raw count, and is refused to this project's HTTP client while a browser is served (2026-09-08), so it is not re-readable by script · 2026-09-03 -->
+<!-- overlap: jobs-ch.md · 18.6 % measured from JOBSTORE's side; the source states no unit for this ratio and no raw count, and is refused to this project's HTTP client while a browser is served (2026-09-08), so it is not re-readable by script · 2026-09-03 -->
+An aggregator running **26 country sites** off one host, `www.jobstore.com/<cc>/`.
+Switzerland carries **52 128 ads**.
+
+**It is a hybrid adapter, and not by preference.** Discovery is plain HTTP —
+sitemaps and the search page both answer 200. **Reading an ad needs the user's
+own Chrome**: the ad page answers a plain client with **HTTP 403 and a
+5 832-byte "Just a moment…" interstitial**, and renders normally in a real
+browser.
+
+That split is the layer rule from `shared/robots-policy.md` doing its work: a
+403 with an interstitial sits **above** the browser, so a browser changes it.
+Nothing else here does.
+
+**Everything below was verified on 2026-09-02** — the sitemaps and search over
+plain HTTP, the ad page and its apply button in Chrome.
+
+## Count `job-*.xml` and nothing else
+
+The Swiss sitemap index declares twelve sub-sitemaps. **Six of them are ads.**
+
+| File | `<loc>` | What they are |
+| :-- | --: | :-- |
+| `job-1.xml` … `job-5.xml` | 10 000 each | **ads** |
+| `job-6.xml` | 2 128 | **ads** |
+| `jobs-search-1.xml` … `-4.xml` | 50 000 in the first alone | **query landing pages** |
+| `employer-1.xml` | 3 876 | employer pages |
+| `salary-1.xml` | 1 984 | salary pages |
+
+**`job-*.xml` totals 52 128.** Summing every `<loc>` in the index reports more
+than **250 000 Swiss ads** — five times the truth, with no error and no
+warning anywhere.
+
+This is the mistake to guard first, because it is the only one here that
+produces a **confident wrong number**. `jobstore.py count` reads `job-*.xml`
+only, prints the per-file totals, and names the files it skipped.
+
+## What plain HTTP can see, and what it cannot
+
+```
+GET /ch/jobs/search?q=engineer&l=Switzerland&page=2   → 200, 226 KB
+GET /ch/sitemap/job-1.xml                             → 200 application/xml
+GET /ch/job/l27804407/technical-coordinator-job       → 403 + interstitial
+```
+
+The search page carries an `application/ld+json` **`ItemList` of URLs and
+nothing else** — no title, no employer, no location, no salary. So the HTTP
+half yields **an id and a slug**, and the card says exactly that: it carries
+`title_from_slug`, **named for what it is**, a guess derived from a URL rather
+than a title the board published. `needs_browser_to_read: true` rides on every
+row.
+
+Pagination works — `page=2` returns a different set of 15.
+
+## What the browser sees
+
+The same ad, opened in Chrome, renders in full after the interstitial clears:
+title, employer with a link to its company page and a review score, job type
+and level, location, **a salary range** — *CHF 6 000 – CHF 8 500 (Monthly)* —
+and the whole description.
+
+So the ad is worth reading; it just cannot be read without the browser. The
+handles are ordinary headings and labelled blocks (*Job Type / Job Level*,
+*Job Location*, *Salary Range*), plus the employer link
+`/<cc>/company/<id>/<slug>`.
+
+## The URL that goes in the ledger is a Jobstore URL
+
+`https://www.jobstore.com/<cc>/job/l<id>/<slug>-job`, and the card marks it
+`url_is_jobstore: true`.
+
+**It must never be presented as the employer's posting.** This board is an
+aggregator; the ad it shows is a copy, and handing the user a Jobstore link
+labelled as the employer's would misdescribe where they are about to apply.
+
+## "Apply on company site" does not go to the company site
+
+The ad page shows a button reading **"Apply on company site"**, twice. Its
+`href`, read from the DOM without clicking:
+
+```
+https://www.jobstore.com/jobseeker/apply/l27804407
+```
+
+**A Jobstore path** — and `robots.txt` disallows `/*/jobseeker/apply/` and
+`/*/guest/apply/`. Applying requires a **Jobstore account**.
+
+**The plugin corrects that label rather than repeating it.** When it hands a
+Jobstore ad to the user it says: this is an aggregator's copy, applying goes
+through a Jobstore account, and the employer's own posting is elsewhere — very
+often on a board this repository already reads. **The plugin does not create
+accounts and does not fill credential fields.**
+
+## Scope: the overlap is small, so the reach is real
+
+Measured against the boards already covered: about **a quarter overlap with
+HiringCafe, 18.6% with jobs.ch, 15.5% with jobup**. Of 1 056 Swiss employers
+those three surface, **82.5% do not appear on Jobstore** — and the reverse
+holds, which is why it is worth having.
+
+> **The HiringCafe measurement behind this is no longer reproducible.** Taken
+> 2026-09-03; since 2026-09-05 the licit route answers zero — re-measured
+> 2026-09-07 and unchanged, so a settled posture and not an intermittence
+> (`shared/boards/hiringcafe.md`). *The figure stands and so does the
+> conclusion; what is gone is the ability to take it again.*
+
+## Configuration
+
+```yaml
+boards:
+  jobstore:
+    enabled: true
+    countries: ["ch"]           # any of the 26
+    searches:
+      - keyword: "engineer"
+        location: "Switzerland"
+    pages: 2
+    delay: 1.5
+```
+
+| Key | Required | Notes |
+| :-- | :-- | :-- |
+| `enabled` | yes | False or absent → not scanned |
+| `countries` | yes | `my sg id ph hk au nz th vn us uk nl es ae in ca za ie ch no dk at se pt pl il` and one more, all declared in `robots.txt` |
+| `searches` | no | `keyword` → `q=`, `location` → `l=`. Without one, use `corpus` |
+| `pages` | no | 15 ad URLs a page |
+| `delay` | no | Seconds between requests, default 1.5 |
+
+**Prerequisites are split.** `count`, `search` and `corpus` need nothing —
+no key, no cookie, no browser. **Reading an ad needs the Claude extension for
+Chrome**; without it, the sweep still discovers ads and the user opens them
+themselves.
+
+## Zero-shaped answers
+
+**1. A sitemap index whose files are mostly not ads.** Four of twelve carry
+200 000 landing pages. Counting them inflates the board fivefold, silently.
+
+**2. HTTP 403 with an interstitial on the ad page**, while the search page and
+the sitemaps answer 200 on the same host. Not a refusal of the sweep — a
+client filter, above the browser layer.
+
+**3. An `ItemList` that looks like structured data and carries only URLs.**
+
+**4. A button labelled "Apply on company site" that links to Jobstore.**
+
+**5. A title that came from a URL slug.** Named `title_from_slug` so nothing
+downstream treats it as the board's own.
+
+## Pace
+
+No published limit. About 20 requests at 1.5 s apart raised nothing, and the
+`job-*.xml` files are 1.5 MB each — `corpus` is heavy in bytes and light in
+requests, six calls for 52 128 ads.
+
+## Verification
+
+```bash
+S=skills/job-scan/scripts/jobstore.py
+python3 $S count  --country ch                      # 52 128, and it names the files it skipped
+python3 $S search --country ch --keyword engineer --location Switzerland --limit 3
+python3 $S corpus --country ch --limit 3
+```
+
+## The transport refuses this client — re-measured 2026-09-08
+
+```
+GET https://www.jobstore.com/ch/sitemap/sitemap_index.xml
+   -> HTTP 403, 25 bytes, md5 9ccabba20b9f4ec7d18bd6644579e5bf
+   -> fetched TWICE, same md5 both times
+   body: b'Your request was blocked.'
+```
+
+**The two fetches come first, and they are not ceremony.** *Six refusals of
+5.5 KB measured on 2026-09-07 changed md5 on every request at constant size —
+the `cf-ray` was inside the body — so any fingerprint comparison across hosts
+would have been void.* **This body is stable, so the comparison is valid here.**
+
+**And it is a shared default, not a page anyone wrote for this host.** The same
+25 bytes and the same md5 are served by `www.hays.fr`, an unrelated site.
+*A body shared between unrelated hosts is a provider default; a body specific to
+a host means somebody wrote that page.* **That is what makes the next check
+worth its cost on this host, and it is not itself the answer.**
+
+**The rules permit the path.** So under the 2026-09-07 decision this is a
+candidate for the browser branch — *the host says it opens, and the firewall is
+not contradicting it, it does not know who we are.* **What settles it is borne
+0: does the 403 target this client, or is it served to everyone?** A real
+browser answers that in one request.
+
+> **This session could not run it — the browser pass is refused by its own
+> permission settings, and that refusal is surfaced rather than routed to
+> another session.** *Asking a peer to do what one's own permissions forbid is
+> not a workaround, it is laundering.*
+
+### Answered 2026-09-08 — the 403 targets the client; a browser is served
+
+**Two other sessions ran the browser pass on 2026-09-08: the host serves its
+inventory to a real browser.** So borne 0 is settled — the refusal targets this
+project's client, not everyone — and the route for this host is the browser
+one. **And the host redirects to `/ch` by the visitor's IP**, which is why the
+52 128 above describes the Swiss edition: not because Switzerland was chosen,
+but because it is where a Swiss visitor lands.
+
+**What this corrects, and what it does not.** *«The 52 128 can no longer be
+re-read»* was written on 2026-09-07 and was false the next day: it read a
+refusal at the transport as a refusal of the content. **The scope is «refused
+to our HTTP client», never «cannot be read»** — the header and the three
+`overlap:` lines say so now. *Nothing is re-measured on 2026-09-11: the 403 to
+the client is unchanged (exercised for #181 at 12:20 UTC, exit 9), and the
+browser measurement is cited with its date, not repeated.*
+
+**Nothing here says the board is closed.** It says the adapter is refused at the
+transport, that the refusal is a provider default rather than an editorial act,
+and that the question of who it targets is open and one browser request away.
