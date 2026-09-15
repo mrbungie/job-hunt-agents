@@ -51,13 +51,35 @@ find_browser() {
 
 render_html() {
   command -v pandoc >/dev/null 2>&1 || { plain_fallback "pandoc is missing; install it for the HTML engine"; return; }
-  local browser template html
+  local browser template html css ws
   browser="$(find_browser)" || { plain_fallback "Chrome or Chromium is missing; install it for the HTML engine"; return; }
-  template="$DIR/resume-template.html"; [ "$KIND" = "letter" ] && template="$DIR/letter-template.html"
+  ws="${JOB_HUNT_HOME:-}"
+  if [ -z "$ws" ] && [ -x "$DIR/../../bin/workspace-path.py" ]; then
+    ws="$(python3 "$DIR/../../bin/workspace-path.py" 2>/dev/null | tail -n 1 || true)"
+  fi
+  if [ -z "$ws" ] && [ -d "$HOME/Documents/job_applications" ]; then
+    ws="$HOME/Documents/job_applications"
+  fi
+
+  template="$DIR/resume-template.html"
+  [ "$KIND" = "letter" ] && template="$DIR/letter-template.html"
+  if [ -n "$ws" ] && [ -d "$ws/profile/template" ]; then
+    if [ "$KIND" = "letter" ] && [ -f "$ws/profile/template/letter-template.html" ]; then
+      template="$ws/profile/template/letter-template.html"
+    elif [ "$KIND" != "letter" ] && [ -f "$ws/profile/template/resume-template.html" ]; then
+      template="$ws/profile/template/resume-template.html"
+    fi
+  fi
+
+  css="$DIR/document.css"
+  if [ -n "$ws" ] && [ -f "$ws/profile/template/document.css" ]; then
+    css="$ws/profile/template/document.css"
+  fi
+
   html="${OUT%.pdf}.html"
   prepare_source
   echo "engine: html" >&2
-  pandoc "$SRC" --standalone --template="$template" --metadata "css=$DIR/document.css" -o "$html"
+  pandoc "$SRC" --standalone --template="$template" --metadata "css=$css" -o "$html"
   "$browser" --headless=new --disable-gpu --allow-file-access-from-files --no-pdf-header-footer "--print-to-pdf=$OUT" "file://$html"
   [ -s "$OUT" ] || { echo "ERROR: Chrome did not write $OUT" >&2; exit 3; }
   echo "Wrote $OUT (HTML preview: $html)" >&2
