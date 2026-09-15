@@ -85,3 +85,19 @@ class HtmlRendering(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("unknown PDF engine", result.stderr)
         self.assertFalse(exists)
+
+    def test_native_html_is_printed_without_markdown_conversion(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            source = root / "resume.html"
+            pdf = root / "resume.pdf"
+            source.write_text("<!doctype html><html><body><h1>Native HTML</h1></body></html>")
+            tools = self.fake_toolchain(root)
+            env = os.environ.copy()
+            env["PATH"] = f"{tools}:{env['PATH']}"
+            env["RENDER_NO_OPEN"] = "1"
+            result = subprocess.run([str(RENDER), str(source), str(pdf)], text=True, capture_output=True, env=env)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("engine: html", result.stderr)
+            self.assertTrue(pdf.read_bytes().startswith(b"%PDF-1.4 html"))
+            self.assertIn("Native HTML", source.read_text())
