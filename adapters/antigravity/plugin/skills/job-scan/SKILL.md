@@ -293,6 +293,15 @@ Take the sweep from `config.yml` → `search.queries`. Each entry becomes one
 search on each configured board, built with that adapter's URL recipe from
 `keywords`, `location`, `posted_within` and `remote_only`.
 
+### Broad-discovery source order
+
+When the user enabled broad discovery, read
+`shared/discovery-precedence.md` before making any request. The order is fixed:
+**JobSpy first, then mcp-chrome with the board's pacing and human challenge
+handoff, then HiringCafe**. A failure or zero from one source is reported as
+that source's result; it does not silently widen into another source or prove
+the market empty.
+
 Quoting a keyword (`keywords: '"Laravel"'`) makes most boards match it strictly
 — four results instead of six hundred of noise. Unquoted keywords are matched
 very loosely, so **always sanity-check the titles**.

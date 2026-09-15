@@ -147,6 +147,15 @@ boards:
     # You must be logged in to LinkedIn, yourself, in the Chrome the Claude
     # extension is connected to. The plugin never signs in for you.
 
+  jobspy:
+    # Broad public-board discovery, preferred before browser discovery and
+    # HiringCafe. Requires Python 3.10+ and `python-jobspy`; no proxy support
+    # is used by this plugin. Sources are the JobSpy names, for example:
+    # ["indeed", "linkedin", "google"]. Enable only sources you want read.
+    enabled: false
+    sites: ["indeed", "linkedin", "google"]
+    results_wanted: 25
+
   jobup:
     # jobup.ch — French-speaking Switzerland. Scanning needs NO login.
     enabled: false
