@@ -841,12 +841,28 @@ only, with no endpoints, internal names or ticket references.
 ```bash
 ./render.sh <folder>/resume.md       <folder>/<Family>_<Given>_<Company>.pdf
 ./render.sh <folder>/cover-letter.md <folder>/<Family>_<Given>_<Company>_CoverLetter.pdf letter
+# Optional, only when explicitly requested:
+./render.sh --engine latex <folder>/resume.md <folder>/<Family>_<Given>_<Company>.pdf
 ```
 
-(`render.sh` sits in this skill's folder; the name parts come from
-`config.yml` → `candidate`.) It uses pandoc + xelatex and opens each PDF when
-it is done. If it reports a missing tool it prints the install command for the
-platform — relay it and re-render; the markdown is already saved.
+`render.sh` defaults to **HTML → PDF**: Pandoc produces a local HTML preview
+and local Chrome/Chromium prints it to PDF. `--engine latex` is the optional
+Pandoc + XeLaTeX route. Never switch engines silently: report the one used.
+
+**PDF validation is two independent checks, before attaching anything.**
+
+1. ATS: `test -s <pdf>`, `pdfinfo <pdf> | grep Pages`, then
+   `pdftotext -layout <pdf> -` must contain the candidate name, contact line,
+   headings and job titles in sane order.
+2. Visual: in the confirmed **mcp-chrome** profile, open the generated local
+   HTML preview (and the PDF when the browser can open it), take a full-page
+   **screenshot** of each page, and use **vision** to inspect hierarchy,
+   clipping, overlap, orphan headings, bad page breaks, illegible text and
+   accidental blank pages. A PDF is not approved merely because text extracts.
+
+If either check fails, edit and re-render. Do not fill an application with an
+unverified attachment. mcp-chrome is the preferred preview/vision path; its
+native print dialog, CAPTCHA, permissions and final submission are human gates.
 
 **If the chain is not there, it renders anyway** (issue #114). `render-plain.py`
 writes the PDF with the standard library alone — no pandoc, no LaTeX, no font

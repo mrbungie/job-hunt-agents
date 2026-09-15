@@ -63,3 +63,10 @@ class BrowserHandoff(unittest.TestCase):
             text = (ROOT / relative).read_text(encoding="utf-8").casefold()
             self.assertNotIn("mcp__claude-in-chrome", text, relative)
             self.assertIn("mcp-chrome", text, relative)
+
+
+class CoverLetterRendering(unittest.TestCase):
+    def test_cover_letter_requires_html_default_and_visual_pdf_qa(self):
+        text = (ROOT / "skills/cover-letter/SKILL.md").read_text(encoding="utf-8").casefold()
+        for phrase in ("html", "--engine latex", "mcp-chrome", "vision", "pdftotext", "screenshot"):
+            self.assertIn(phrase, text)

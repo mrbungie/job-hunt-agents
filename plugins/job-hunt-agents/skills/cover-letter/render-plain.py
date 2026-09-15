@@ -2,7 +2,8 @@
 """A PDF with no LaTeX, no pandoc and no dependency — **and the ATS guarantee
 measured rather than hoped for.**
 
-**The nominal route stays what it is.** `render.sh` uses pandoc and XeLaTeX
+**The nominal route is HTML first.** `render.sh` uses Pandoc plus local Chrome
+for HTML → PDF by default; XeLaTeX remains optional.
 with the project's own template, and a user who has that chain loses nothing.
 **This doubles it; it does not replace it.** Issue #114.
 

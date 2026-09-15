@@ -133,9 +133,9 @@ it. This section is here for anyone who would rather do it in one pass.
 | 2 | **A profile to work from** — a LinkedIn account you can export, or an existing CV | the factual record every document is checked against | The plugin cannot work; it will not invent a career |
 | 3 | **Google Chrome** + **[mcp-chrome](https://github.com/hangwin/mcp-chrome)** connected in the profile you choose | scanning ads, filling application forms | Documents still work; nothing opens or fills automatically. You give an ad URL, or paste the text |
 | 3b | **Being logged in to the board yourself**, in that Chrome — LinkedIn requires it, jobup.ch does not | scanning LinkedIn, Easy Apply | The plugin works *inside* your session and never signs in for you |
-| 4 | **`pandoc`** | markdown → PDF | No PDFs. The markdown is still written and you can convert it yourself |
-| 5 | **A LaTeX engine with `xelatex`** (TeX Live, MacTeX or MiKTeX) | the PDF layout | Same as above — `render.sh` prints the install command and stops |
-| 6 | **The Noto Sans font family** | both PDF templates set it as the main font | `xelatex` aborts with a font error |
+| 4 | **`pandoc`** + local **Chrome/Chromium** | default HTML → PDF renderer | The script reports the missing prerequisite; markdown remains available |
+| 5 | **A LaTeX engine with `xelatex`** (TeX Live, MacTeX or MiKTeX) | optional `--engine latex` renderer | HTML remains the default route |
+| 6 | **The Noto Sans font family** | optional LaTeX templates | Only needed for the LaTeX route |
 | 7 | **`poppler`** — provides `pdftotext` and `pdfinfo` | reading your profile exports, checking page counts | Setup cannot validate your exports, and page-count checks are skipped |
 | 8 | **ImageMagick** + **Python 3** with **Pillow** | *optional* — turning a scanned signature into a transparent PNG | No signature image; the letter leaves blank space to sign by hand |
 | 9 | **~50 MB of disk** in your home directory | the workspace: your profile, the ledger, one folder per application | — |
