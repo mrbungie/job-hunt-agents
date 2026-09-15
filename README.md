@@ -753,6 +753,36 @@ Adding a module for your country is the most useful contribution you can make.
 
 ---
 
+## Portable host bundles (experimental)
+
+Claude Code continues to use the plugin install instructions above. For Codex,
+Antigravity, or OpenCode, create a project-scoped bundle from a checkout:
+
+```sh
+python3 bin/install-host.py --host codex --project /path/to/your/project
+```
+
+Replace `codex` with `antigravity` or `opencode`. This writes only under
+`.job-hunt-agents/<host>` in that project, refuses to overwrite an edited owned
+file, and can preview or remove its own unchanged files:
+
+```sh
+python3 bin/install-host.py --host codex --project /path/to/your/project --dry-run
+python3 bin/install-host.py --host codex --project /path/to/your/project --uninstall
+```
+
+To make a movable distribution instead, run:
+
+```sh
+python3 bin/build-host.py --host codex --output /tmp/job-hunt-codex
+```
+
+See [`docs/compatibility.md`](docs/compatibility.md) for the evidence-based
+support matrix. Browser-dependent work is not claimed portable until it has
+been exercised with that host's browser backend.
+
+---
+
 ## Troubleshooting
 
 | Symptom | Cause | Fix |
