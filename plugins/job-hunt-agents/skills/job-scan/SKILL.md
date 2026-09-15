@@ -684,6 +684,26 @@ catch different things: one says somebody else got there first, the other says
 your own merge lost something. **If the stamp moved, do not write** — re-read,
 re-apply, and tell the user it happened.
 
+### Importing JobSpy and mcp-chrome discoveries
+
+Do not hand-compose discovery rows. Save the normalized records as JSONL, then
+import them through the one writer that records their provenance:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT:-.}/bin/discovery-import.py" \
+  --input "$JOB_HUNT_HOME/discovery.jsonl"
+```
+
+Each line requires `source` (`jobspy:<site>` or `mcp-chrome:<board>`) and a
+URL; `title`, `company`, `location`, `date_posted`, `match`, and `pay` are
+optional. The importer writes `origin=…`, `captured=…`, and `url=…` into
+`Note`, creates an ID if the source did not provide one, and compares both ID
+and URL before inserting a new `todo` row. It never edits an existing row — so
+an application already `applied`, `rejected`, `no-go`, or `discarded` remains
+the historical record. After a browser challenge, import only the cards the
+person let the agent read; the challenge itself is reported, never converted
+into a fake zero-result scan.
+
 It exits 5 if the ledger came back shorter, **and 6 if a row's cells no
 longer line up with the header** — a shifted row is a lost row that still
 counts, and its status is the one that cannot be trusted. `shared/pipeline-format.md`

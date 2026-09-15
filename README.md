@@ -796,6 +796,8 @@ server available even when a host does not import plugin MCP settings.
 PROJECT=/absolute/path/to/project
 mkdir -p "$PROJECT/.opencode"
 cp -R "$REPO/adapters/opencode/skills" "$PROJECT/.opencode/"
+mkdir -p "$PROJECT/.opencode/bin"
+cp "$REPO/bin/jobspy.py" "$REPO/bin/discovery-import.py" "$PROJECT/.opencode/bin/"
 (cd "$PROJECT" && opencode mcp add mcp-chrome --url http://127.0.0.1:12306/mcp)
 ```
 

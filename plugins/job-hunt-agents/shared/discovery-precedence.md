@@ -48,3 +48,6 @@ already has the bounded pacing and override record; do not add a second bypass.
 
 The final report names which of the three sources ran, skipped, throttled, or
 required human takeover. It never calls the union of their results “all jobs”.
+Save every discovered card as JSONL and pass it through
+`bin/discovery-import.py`; it persists source, URL and capture time in the
+ledger and deduplicates by both URL and source ID.
