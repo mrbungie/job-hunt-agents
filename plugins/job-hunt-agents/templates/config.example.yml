@@ -148,8 +148,8 @@ boards:
     # extension is connected to. The plugin never signs in for you.
 
   jobspy:
-    # Broad public-board discovery, preferred before browser discovery and
-    # HiringCafe. Requires Python 3.10+ and `python-jobspy`; no proxy support
+    # Broad public-board discovery, first in search.discovery_order by
+    # default, before browser discovery. Requires Python 3.10+ and `python-jobspy`; no proxy support
     # is used by this plugin. Sources are the JobSpy names, for example:
     # ["indeed", "linkedin", "google"]. Enable only sources you want read.
     enabled: false
@@ -274,6 +274,15 @@ search:
     - keywords: 'PHP OR Laravel'
       location: "United Kingdom"
       remote_only: true
+  # Broad-discovery source order ("who is hiring near me?"). job-scan tries
+  # these in order and reports each one as ran / skipped / throttled / needed
+  # you. Default: JobSpy, then mcp-chrome (the mcp-chrome-bridge extension in
+  # your own Chrome). HiringCafe is OPTIONAL and off by default — it is
+  # unreliable (403 throttles, written robots refusal). Add "hiringcafe" to
+  # this list yourself, anywhere you like, and it also needs
+  # boards.hiringcafe.enabled + override_robots. Reorder or trim freely; for a
+  # single run you can also just tell job-scan which order to use.
+  discovery_order: ["jobspy", "mcp-chrome"]
   # How far back to look: week | month | quarter
   posted_within: "month"
   # Companies to always discard on sight — aggregators, reposting farms, and

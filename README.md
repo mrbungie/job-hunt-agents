@@ -28,7 +28,8 @@ plugin says which folder before it writes anything in it.
 - **`job-scan`** — sweeps the job boards you switch on, in *your own* Chrome,
   scores every ad against your real profile, and keeps a ledger so the same ad
   is never proposed twice. Ships with **JobSpy** as the preferred broad public-
-  board source, then mcp-chrome and HiringCafe as documented fallbacks,
+  board source, then mcp-chrome (order overridable via `search.discovery_order`; HiringCafe
+  is optional and off by default),
   **job-room.ch**, **France Travail**, **Empléate** and the
   **Bundesagentur für Arbeit** (the Swiss, French, Spanish and German public
   employment services — the last of them nearly a million ads, no browser either), **Workday / Greenhouse / Lever / Ashby** (your target

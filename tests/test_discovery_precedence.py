@@ -14,7 +14,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
 class DiscoveryPrecedence(unittest.TestCase):
-    def test_broad_discovery_prefers_jobspy_then_browser_then_hiringcafe(self):
+    def test_broad_discovery_prefers_jobspy_then_browser_with_optional_hiringcafe(self):
         path = ROOT / "shared" / "discovery-precedence.md"
         self.assertTrue(path.is_file(), "the discovery precedence policy is missing")
         policy = path.read_text(encoding="utf-8").casefold()
@@ -27,6 +27,10 @@ class DiscoveryPrecedence(unittest.TestCase):
         self.assertIn("challenge", policy)
         self.assertIn("human", policy)
         self.assertIn("do not use proxies", policy)
+        self.assertIn('`["jobspy", "mcp-chrome"]`', policy)
+        self.assertIn("never add hiringcafe on your own initiative", policy)
+        config = (ROOT / "templates" / "config.example.yml").read_text(encoding="utf-8")
+        self.assertIn('discovery_order: ["jobspy", "mcp-chrome"]', config)
 
     def test_jobspy_rows_keep_the_upstream_site_and_stable_url_id(self):
         path = ROOT / "bin" / "jobspy.py"

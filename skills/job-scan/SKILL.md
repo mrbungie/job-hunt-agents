@@ -281,8 +281,9 @@ browser at all. `hiringcafe.md`, `job-room.md`, `france-travail.md`, `apec.md`,
 no login and no Chrome. Only `linkedin.md`,
 `indeed.md`, `cadremploi.md`, `figaro-emploi.md`, `softy.md` and `wttj.md` (for reading; its discovery half is plain HTTP) need the user's own browser — and of those,
 only LinkedIn needs them logged in. Announcing requirements a board does not have costs the user a
-setup they did not need — and when the extension really is missing, HiringCafe
-is a sweep that still runs, not just a fallback to `cover-letter`.
+setup they did not need — and when the extension really is missing, JobSpy
+and the plain-HTTP boards still run. HiringCafe is **not** an automatic
+fallback: it runs only when the user opted into it (see below).
 
 The adapter's constraint table is the difference between a scan that works and
 forty wasted round-trips. Read it; do not improvise around it.
@@ -296,9 +297,13 @@ search on each configured board, built with that adapter's URL recipe from
 ### Broad-discovery source order
 
 When the user enabled broad discovery, read
-`shared/discovery-precedence.md` before making any request. The order is fixed:
-**JobSpy first, then mcp-chrome with the board's pacing and human challenge
-handoff, then HiringCafe**. A failure or zero from one source is reported as
+`shared/discovery-precedence.md` before making any request. The default order
+is **JobSpy first, then mcp-chrome with the board's pacing and human challenge
+handoff**. **HiringCafe is optional and off by default** — it runs only if the
+user listed `hiringcafe` in `search.discovery_order` (or asked for it this
+run) *and* enabled it with its robots override. The user overrides the order
+in chat for one run, or in `search.discovery_order` durably. Never fall back
+to HiringCafe on your own. A failure or zero from one source is reported as
 that source's result; it does not silently widen into another source or prove
 the market empty.
 

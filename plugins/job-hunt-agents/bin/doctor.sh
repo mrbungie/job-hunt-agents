@@ -83,8 +83,8 @@ have_font() {
   return 1
 }
 
-# The HiringCafe sweep is plain HTTP driven by a stdlib-only Python script, so
-# an interpreter is enough — no third-party package to install.
+# JobSpy and the plain-HTTP board adapters are Python scripts, so an
+# interpreter is required (JobSpy itself also needs python-jobspy, 3.10+).
 have_python() {
   local c
   for c in python3 python py; do
@@ -141,7 +141,7 @@ check "pdftotext" probe_pdftotext "reading your exports; setup cannot validate t
 check "pdfinfo"   probe_pdfinfo   "page-count checks after rendering"                poppler required
 echo
 echo "Job boards"
-check "Python"    have_python     "the HiringCafe sweep; the other boards are unaffected" python required
+check "Python"    have_python     "JobSpy and the plain-HTTP board adapters" python required
 echo
 echo "Handwritten signature (optional)"
 check "magick"    probe_magick    "keying a scanned signature"                       magick  optional
@@ -197,7 +197,7 @@ echo "  Cannot be probed from a shell. Two things are needed, both yours to set 
 echo "    1. the Claude extension for Chrome, installed and connected"
 echo "       — https://claude.com/chrome"
 echo "    2. you, logged in to the board in that Chrome (LinkedIn needs it; jobup.ch does not)
-  Neither is needed for the HiringCafe sweep, which is plain HTTP."
+  Neither is needed for JobSpy or the plain-HTTP boards."
 echo "  Test it by asking Claude: \"open a tab on linkedin.com and tell me if I'm logged in\""
 echo
 

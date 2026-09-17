@@ -514,15 +514,15 @@ they build a selection.
 
 | Signal from the answers | Boards to propose | Boards to leave out, and say why |
 | :-- | :-- | :-- |
-| **Anywhere / any profile** | HiringCafe — worldwide, no browser, no account, the one sweep that works everywhere | — |
+| **Anywhere / any profile** | JobSpy (broad public boards), then mcp-chrome in their own Chrome — the default `search.discovery_order` | HiringCafe — optional and off by default: it throttles and fails often. Offer it only as an opt-in they add to `discovery_order` themselves |
 | **Country = Switzerland** | job-room.ch, jobup.ch (Romandie) or jobs.ch (Suisse alémanique), randstad.ch | France Travail — French offers only |
 | **Country = France** | France Travail *(see 5c, and say it is unverified)*, Indeed `fr.indeed.com`, Michael Page `.fr` | Every `.ch` board — they carry no French ads at all |
-| **Country not covered by any adapter** | HiringCafe, LinkedIn, Indeed on that country's domain | Say plainly that the national boards there have no adapter, and that `cover-letter <URL>` still handles any ad from them |
+| **Country not covered by any adapter** | JobSpy (Indeed/LinkedIn/Google for that country), LinkedIn or Indeed through mcp-chrome | Say plainly that the national boards there have no adapter, and that `cover-letter <URL>` still handles any ad from them |
 | **Names specific employers** | Workday, Greenhouse, Lever, Ashby, SmartRecruiters, SuccessFactors, Solique, umantis — resolved per employer | Offer these **only** when employers were named. They answer *"is X hiring?"*, never *"who is hiring near me?"*, and a user with nobody in mind gains nothing |
 | **Accepts intérim / mission** | The agency boards for that country — randstad.ch, persigo.ch, fachkraft.ch, Michael Page | Leave them out otherwise: they are volume the user has already said no to, and the employer is never named |
 | **Sector = social, care, education** | sozialinfo.ch (CH) | — |
 | **Sector = trades, industry, technical** | fachkraft.ch (CH), persigo.ch (CH) | — |
-| **Reconversion (Q1)** | Broad boards only — HiringCafe, the national one, LinkedIn | **Drop the sector boards keyed to the old trade.** This is the case where a sector board is actively harmful: it fills the pipeline with exactly the work they are leaving |
+| **Reconversion (Q1)** | Broad boards only — JobSpy, the national one, LinkedIn | **Drop the sector boards keyed to the old trade.** This is the case where a sector board is actively harmful: it fills the pipeline with exactly the work they are leaving |
 | **Wants LinkedIn / Easy Apply** | LinkedIn | Needs their own Chrome and their own logged-in session — say so before enabling, not after |
 
 Present it as: *"d'après vos réponses, je propose ces quatre — voici pourquoi
@@ -628,7 +628,7 @@ itself.
 | France Travail | Their **departments** (`"75"`, `"69"` — strings, leading zero kept) or an **INSEE commune code** plus a radius. **No login, no browser** — but it needs an API key, free from francetravail.io. Walk them through it with section 5c; do not ask for the key before they have enabled the board. France only |
 | job-room.ch | The cantons they would work in (official uppercase codes), or a point and a radius of at least 10 km. **No login, no browser.** Switzerland only. Reaches the SMEs, foundations and staffing agencies HiringCafe misses |
 | Adzuna | Their ISO-2 country, from the nineteen it serves. **No login, no browser** — but it needs a free key from developer.adzuna.com, and its budget is the smallest here: **250 calls a day for every country together**. Walk them through it with section 5e |
-| HiringCafe | Their ISO-2 country code. **No login, no browser, no extension** — it is plain HTTP, and the only sweep that works without Chrome. Worldwide; thin in emerging markets, and blind to the Swiss ATS (Refline, Ostendis, Umantis) |
+| HiringCafe | Their ISO-2 country code. **No login, no browser, no extension** — it is plain HTTP. **Optional, never proposed by default**: unreliable (403 throttles, written robots refusal); enable only if the user asks, and add `hiringcafe` to `search.discovery_order`. Worldwide; thin in emerging markets, and blind to the Swiss ATS (Refline, Ostendis, Umantis) |
 | LinkedIn | Their own profile URL, and they must be logged in themselves, in the Chrome the Claude extension is connected to |
 | jobup.ch | Nothing — **no login needed to scan.** Swiss ads, French-speaking Switzerland |
 | randstad.ch | Nothing — **no login, no browser.** The staffing agency's Swiss board, ~985 ads nationwide. The employer is never named. Note for Romandie users: its structured data is absent on Geneva-area ads, which the adapter handles but which makes those ads slightly thinner |
@@ -1164,8 +1164,9 @@ read.*
 
 ## 5g — HiringCafe: the third override, and it does not follow from the rule
 
-**Run this whenever `hiringcafe` is in `boards:`** — it is a worldwide
-meta-board, so that is most workspaces.
+**Run this only when the user asked for `hiringcafe`** — it is optional and
+not proposed by default. Enabling it also means adding `hiringcafe` to
+`search.discovery_order` at the position they choose.
 
 **This one is different in kind from 5d and 5f, and the user is told so.**
 AMS and SmartRecruiters were overridden because their files open to one
